@@ -36,7 +36,7 @@ export default class CanvasScene {
 		}
 		this._context.font = 'bold 12px Arial'
 		this._context.fillStyle = '#000'
-		this._context.fillText(`FPS: ${this._fps.fps}`, 10, 20)
+		this._context.fillText(`FPS ${this._fps.fps}`, 10, 20)
 		this._fps.dp = datenow()
 	}
 
@@ -58,6 +58,7 @@ export default class CanvasScene {
 			const componentIdentifiers = Object.keys(components)
 			for (let i = 0; i < componentIdentifiers.length; ++i) {
 				let [componentIdentifier, component] = [componentIdentifiers[i], components[componentIdentifiers[i]]]
+				component.componentIdentifier = componentIdentifier
 				this._components[this._components.length] = { componentIdentifier, component }
 			}
 		}

@@ -19,7 +19,7 @@ scene.bindComponent(new LevelData11Component())
 
 scene.componentsReady(() => {
 	
-	const [levelComponents, player] = [scene.getAllBindings(), scene.getBindedComponent('player')]
+	const [components, player] = [scene.getAllBindings(), scene.getBindedComponent('player')]
 	
 	const [DX, UPHEIGHT, UPHEIGHTADDITIONAL, UPDURATION, UPDURATIONADDITIONAL] = [5.5, 64, 100, 150, 100]
 	
@@ -34,7 +34,7 @@ scene.componentsReady(() => {
 		DIRECTIONRIGHT = code == 39
 	}, () => DIRECTIONLEFT = DIRECTIONRIGHT = false)
 
-	
+
 	RAF.launch(passedTime => {
 
 		let DIRECTION;
@@ -43,17 +43,11 @@ scene.componentsReady(() => {
 		else if (DIRECTIONRIGHT) DIRECTION = 0
 		else DIRECTION = false
 
-		if (DIRECTIONLEFT) player.moveX(1, -DX)
-
-		else if (DIRECTIONRIGHT) {
-			if (player.reachedHalf()) scene.move(-DX, ['player'])
-			player.moveX(0, DX)
-		}
+		if (DIRECTIONLEFT) player.moveX(1, -DX, components, scene)
+		else if (DIRECTIONRIGHT) player.moveX(0, DX, components, scene)
 		else player.stand(player.direction)
 
-		if (DIRECTIONUP) 
-			if (player.moveY(passedTime, UPHEIGHT, UPHEIGHTADDITIONAL, UPDURATION, UPDURATIONADDITIONAL, SPACEPRESSED, DIRECTION, levelComponents)) 
-				DIRECTIONUP = false
+		if (DIRECTIONUP) if (player.moveY(passedTime, UPHEIGHT, UPHEIGHTADDITIONAL, UPDURATION, UPDURATIONADDITIONAL, SPACEPRESSED, DIRECTION, components)) DIRECTIONUP = false
 
 		scene.draw(true)
 		scene.fps()
