@@ -20,36 +20,40 @@ scene.bindComponent(new LevelData11Component())
 scene.componentsReady(() => {
 	
 	const [components, player] = [scene.getAllBindings(), scene.getBindedComponent('player')]
-	
-	const [DX, UPHEIGHT, UPHEIGHTADDITIONAL, UPDURATION, UPDURATIONADDITIONAL] = [5.5, 64, 100, 150, 100]
-	
-	let [SPACEPRESSED, DIRECTIONLEFT, DIRECTIONRIGHT, DIRECTIONUP] = []
+	let [SPACEPRESSED, DIRECTIONLEFT, DIRECTIONRIGHT, DIRECTIONUPDOWN, DIRECTIONDOWN] = []
 
+	const control = {SPACEPRESSED, DIRECTIONLEFT, DIRECTIONRIGHT, DIRECTIONUPDOWN, DIRECTIONDOWN}
+	
 	Keyboard.space(() => {
-		DIRECTIONUP = SPACEPRESSED = true
-	}, () => SPACEPRESSED = false)
+		control.DIRECTIONUPDOWN = true
+		control.SPACEPRESSED = true
+	}, () => control.SPACEPRESSED = false)
 
 	Keyboard.LR(code => {
-		DIRECTIONLEFT = code == 37
-		DIRECTIONRIGHT = code == 39
-	}, () => DIRECTIONLEFT = DIRECTIONRIGHT = false)
+		control.DIRECTIONLEFT = code == 37
+		control.DIRECTIONRIGHT = code == 39
+	}, () => control.DIRECTIONLEFT = control.DIRECTIONRIGHT = false)
 
 
 	RAF.launch(passedTime => {
 
-		let DIRECTION;
-
-		if (DIRECTIONLEFT) DIRECTION = 1
-		else if (DIRECTIONRIGHT) DIRECTION = 0
-		else DIRECTION = false
-
-		if (DIRECTIONLEFT) player.moveX(1, -DX, components, scene)
-		else if (DIRECTIONRIGHT) player.moveX(0, DX, components, scene)
+		if (control.DIRECTIONLEFT) {
+			player.moveX(passedTime, 1, components, scene, control)
+		}
+		else if (control.DIRECTIONRIGHT) { 
+			player.moveX(passedTime, 0, components, scene, control)
+		}
 		else player.stand(player.direction)
 
-		if (DIRECTIONUP) if (player.moveY(passedTime, UPHEIGHT, UPHEIGHTADDITIONAL, UPDURATION, UPDURATIONADDITIONAL, SPACEPRESSED, DIRECTION, components)) DIRECTIONUP = false
+		if (control.DIRECTIONDOWN) {
+			if (player.moveY(passedTime, control, components, false)) control.DIRECTIONDOWN = control.DIRECTIONUPDOWN = false
+		}
+		else if (control.DIRECTIONUPDOWN) {
+			if (player.moveY(passedTime, control, components, true)) control.DIRECTIONUPDOWN = false
+		}
+ 
 
-		scene.draw(true)
+		scene.render(true)
 		scene.fps()
 		// if (passedTime > 1 * 1e3) RAF.endLaunched()
 	})

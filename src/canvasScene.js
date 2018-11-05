@@ -77,7 +77,7 @@ export default class CanvasScene {
 		}
 	}
 
-	draw(clearScene) {
+	render(clearScene) {
 		if (clearScene == true) {
 			this.clear()
 		}
@@ -96,7 +96,7 @@ export default class CanvasScene {
 		const imgComponentReadyCallback = () => {
 			imgComponentReadyCount++
 			if (imgComponentCount == imgComponentReadyCount) {
-				this.draw(false)
+				this.render(false)
 				ready()
 			}
 		}

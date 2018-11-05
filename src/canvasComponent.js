@@ -110,6 +110,6 @@ export default class CanvasComponent {
 
 			}
 		}
-		return {collisions, types, first}
+		return {collisions, types, first, TTYPE, BTYPE, LTYPE, RTYPE, THROUGHTYPE}
 	}
 }
