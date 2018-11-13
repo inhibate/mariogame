@@ -6,6 +6,7 @@ import QBC from '../lcomponents/QuestionBlockComponent'
 import BBC from '../lcomponents/BrickBlockComponent'
 import PBC from '../lcomponents/PipeBlockComponent'
 import FBC from '../lcomponents/FloorBlockComponent'
+import CABC from '../lcomponents/CoinABlockComponent'
 
 import PC from '../lcomponents/PlayerComponent'
 
@@ -301,8 +302,10 @@ export default class Level11DataComponent {
 			'ttc87': new TTC(FEx + delta * 172, FEy - delta * 4),
 			
 			'ttc88': new TTC(FEx + delta * 173, FEy - delta * 4),
+			
+			'player': new PC(20, SCENEH - FLOORH - delta),
 
-			'player': new PC(20, SCENEH - FLOORH - delta)
+			'cabc': new CABC(20, 20)
 		}
 
 	}

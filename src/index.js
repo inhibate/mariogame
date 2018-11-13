@@ -24,6 +24,8 @@ scene.componentsReady(() => {
 
 	const control = {SPACEPRESSED, DIRECTIONLEFT, DIRECTIONRIGHT, DIRECTIONUPDOWN, DIRECTIONDOWN}
 	
+	control.animate = []
+
 	Keyboard.space(() => {
 		control.DIRECTIONUPDOWN = true
 		control.SPACEPRESSED = true
@@ -34,28 +36,39 @@ scene.componentsReady(() => {
 		control.DIRECTIONRIGHT = code == 39
 	}, () => control.DIRECTIONLEFT = control.DIRECTIONRIGHT = false)
 
+	const isQBC = componentIdentifier => /^(qbc)/i.test(componentIdentifier)
 
 	RAF.launch(passedTime => {
+
+		components.filter(component => isQBC(component.componentIdentifier)).forEach(component => component.component.animate(passedTime))
+
+		if (control.animate.length > 0) {
+			for (let i = 0, componentIdentifiers = control.animate; i < componentIdentifiers.length; i++) {
+				try {
+					const ANIMATIONCOMPLETED = scene.getBindedComponent(componentIdentifiers[i]).hit(passedTime)
+					if (ANIMATIONCOMPLETED) componentIdentifiers.splice(i--, 1)
+				}
+				catch (exception) {}
+			}
+		}
 
 		if (control.DIRECTIONLEFT) {
 			player.moveX(passedTime, 1, components, scene, control)
 		}
-		else if (control.DIRECTIONRIGHT) { 
+		else if (control.DIRECTIONRIGHT) {
 			player.moveX(passedTime, 0, components, scene, control)
 		}
 		else player.stand(player.direction)
 
+
 		if (control.DIRECTIONDOWN) {
-			if (player.moveY(passedTime, control, components, false)) control.DIRECTIONDOWN = control.DIRECTIONUPDOWN = false
+			if (player.moveY(passedTime, false, components, scene, control)) control.DIRECTIONDOWN = control.DIRECTIONUPDOWN = false
 		}
 		else if (control.DIRECTIONUPDOWN) {
-			if (player.moveY(passedTime, control, components, true)) control.DIRECTIONUPDOWN = false
+			if (player.moveY(passedTime, true, components, scene, control)) control.DIRECTIONUPDOWN = false
 		}
- 
 
 		scene.render(true)
 		scene.fps()
-		// if (passedTime > 1 * 1e3) RAF.endLaunched()
 	})
-
 })

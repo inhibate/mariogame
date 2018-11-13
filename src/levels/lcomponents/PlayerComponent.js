@@ -218,7 +218,7 @@ export default class PlayerComponent extends CanvasComponent {
 		}
 	}
 
-	moveY(time, control, components, jumping) {
+	moveY(time, jumping, components, scene, control) {
 
 		const ISRIGHT = this.direction == 0
 
@@ -238,75 +238,24 @@ export default class PlayerComponent extends CanvasComponent {
 
 		const INITIALDIRECTIONRIGHT = this.initialDirection == 0
 		const MOVEDOWN = this.completedUp == true
-		let posx = this.posx
-		let posy = this.posy
-		let [w, h] = [this.defaultWidth, this.height]
-
-		if (jumping) {
-			this.specifyJumping(this.direction)
-			if (INITIALDIRECTIONRIGHT) posx = posx + this.jumpingSpriteNormalizationC
-		}
-		else {
-			this.specifyRunning(this.direction)
-			w = this.width
-		} 
-
-		const collisions = this.collisions(components, posx, posy, w, h)
-		const containsTTYPE = collisions.types.includes(collisions.TTYPE)
-		const containsBTYPE = collisions.types.includes(collisions.BTYPE)
-		const containsTHROUGHTYPE = collisions.types.includes(collisions.THROUGHTYPE)
-		let TYPE;
-		if (containsTTYPE) TYPE = collisions.TTYPE
-		if (containsBTYPE) TYPE = collisions.BTYPE
-		if (containsTHROUGHTYPE) TYPE = collisions.THROUGHTYPE
-
-		if (containsTHROUGHTYPE) this.timeBack = this.timeBack + (time - this.lastTime)
-
-		this.lastPosy = posy
-		this.lastTime = time
-		time = time - this.timeBack
+		const BTYPE = 'B'
 		
-		if (MOVEDOWN) {
-			
-			let [delayIndex, terminateMovementDown] = [this.duration - this.movement.DURATION]
-			const BTYPECOLLISION = this.collisionType == collisions.BTYPE
+		time = time - this.timeBack
 
-			if (!BTYPECOLLISION) {
+		if (MOVEDOWN) {
+			let [delayIndex, terminateMovementDown] = [this.duration - this.movement.DURATION]
+			
+			if (this.collisionType != BTYPE) {
 				if (!this.t1) this.t1 = time
 				if (time - this.t1 < delayIndex) terminateMovementDown = true
 			}
 
 			if (terminateMovementDown) return false
-
-			if (containsTTYPE) {
-				if (jumping) if (INITIALDIRECTIONRIGHT) this.posx = this.posx + this.jumpingSpriteNormalizationC
-				this.movingY = undefined
-				updatePosyIncludingCollisionOffset(collisions.first(TYPE).collisionOffset)
-				
-				this.stand(this.direction)
-				const cs = this.collisions(components, this.posx, this.posy, this.width, this.height)
-				const containsLTYPE = cs.types.includes(cs.LTYPE)
-				const containsRTYPE = cs.types.includes(cs.RTYPE)
-				if (containsLTYPE) TYPE = cs.LTYPE
-				if (containsRTYPE) TYPE = cs.RTYPE
-				if (containsLTYPE || containsRTYPE) this.posx = this.posx + cs.first(TYPE).collisionOffset
-
-				this.lastTime = this.timeBack = this.t1 = this.collisionType = this.initialDirection = this.inittime = this.initposy = this._initposy = this.spaceunpressed = this.spacepressed = this.duration = this.completedUp = this.once = undefined
-				return true
-			}
 			else this.gravitate(time)
 		}
 		else {
-
 			let DURATIONINDEX;
-
-			if (containsBTYPE) {
-				updatePosyIncludingCollisionOffset(-collisions.first(TYPE).collisionOffset)
-				this.completedUp = true
-				this.collisionType = TYPE
-				return false
-			}
-
+			
 			if (control.SPACEPRESSED && !this.spaceunpressed) this.spacepressed = true
 			else {
 				this.spacepressed = false
@@ -318,12 +267,78 @@ export default class PlayerComponent extends CanvasComponent {
 				this.duration = this.movement.DURATION + (this.movement.DURATIONADDITIONAL * DURATIONINDEX)
 				this.initposy = this._initposy - this.movement.HEIGHTADDITIONAL * DURATIONINDEX
 			}
-
+ 			
  			DURATIONINDEX = this.getDurationIndex(time, this.inittime, this.duration)
  			if (DURATIONINDEX == 1) this.completedUp = true
 			
 			this.posy = this.initposy - this.movement.HEIGHT * DURATIONINDEX
 		}
+
+		let [w, h] = [this.defaultWidth, this.height]
+		let posx = this.posx
+		let posy = this.posy
+		
+		if (jumping) { if (INITIALDIRECTIONRIGHT) posx = posx + this.jumpingSpriteNormalizationC }
+		else w = this.width
+
+		if (jumping)
+			this.specifyJumping(this.direction)
+		else
+			this.specifyRunning(this.direction)
+
+		const collisions = this.collisions(components, posx, posy, w, h)
+		const containsTTYPE = collisions.types.includes(collisions.TTYPE)
+		const containsBTYPE = collisions.types.includes(collisions.BTYPE)
+		const containsTHROUGHTYPE = collisions.types.includes(collisions.THROUGHTYPE)
+		let TYPE;
+		if (containsTTYPE) TYPE = collisions.TTYPE
+		if (containsBTYPE) TYPE = collisions.BTYPE
+
+		if (containsTHROUGHTYPE) {
+			this.timeBack = this.timeBack + (time - this.lastTime)
+			time = time - this.timeBack
+			if (MOVEDOWN) this.gravitate(time)
+			else this.posy = this.initposy - this.movement.HEIGHT * this.getDurationIndex(time, this.inittime, this.duration)
+		}
+		else {
+
+			if (MOVEDOWN) {
+				if (containsTTYPE) {
+					if (jumping) if (INITIALDIRECTIONRIGHT) this.posx = this.posx + this.jumpingSpriteNormalizationC
+					this.movingY = undefined
+					updatePosyIncludingCollisionOffset(collisions.first(TYPE).collisionOffset)
+					
+					this.stand(this.direction)
+					const cs = this.collisions(components, this.posx, this.posy, this.width, this.height)
+					const containsLTYPE = cs.types.includes(cs.LTYPE)
+					const containsRTYPE = cs.types.includes(cs.RTYPE)
+					if (containsLTYPE) TYPE = cs.LTYPE
+					if (containsRTYPE) TYPE = cs.RTYPE
+					if (containsLTYPE || containsRTYPE) this.posx = this.posx + cs.first(TYPE).collisionOffset
+
+					this.lastTime = this.timeBack = this.t1 = this.collisionType = this.initialDirection = this.inittime = this.initposy = this._initposy = this.spaceunpressed = this.spacepressed = this.duration = this.completedUp = this.once = undefined
+					return true
+				}
+			}
+			else {
+				if (containsBTYPE) {
+					collisions.collisions.filter(collision => collision.collisionType == collisions.BTYPE).forEach(
+						collision => {
+							const [animate, componentIdentifier] = [control.animate, collision.componentIdentifier]
+							if (animate.includes(componentIdentifier) == false) animate.push(componentIdentifier)
+						}
+					)
+					this.collisionType = TYPE
+					this.completedUp = true
+					updatePosyIncludingCollisionOffset(-collisions.first(TYPE).collisionOffset)
+					return false
+				}
+			}
+
+		}
+
+		this.lastTime = time
+		this.lastPosy = this.posy
 	}
 
 	gravitate(time) {
@@ -332,5 +347,4 @@ export default class PlayerComponent extends CanvasComponent {
 		this.posy = this.posy + this.movement.HEIGHT * this.getDurationIndex(time, this.inittime, this.movement.DURATION)
 		this.inittime = time
 	}
-
 } 
