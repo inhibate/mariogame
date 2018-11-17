@@ -6,11 +6,10 @@ import QBC from '../lcomponents/QuestionBlockComponent'
 import BBC from '../lcomponents/BrickBlockComponent'
 import PBC from '../lcomponents/PipeBlockComponent'
 import FBC from '../lcomponents/FloorBlockComponent'
-import CABC from '../lcomponents/CoinABlockComponent'
 
 import PC from '../lcomponents/PlayerComponent'
 
-import {LEVELBGPATH, SCENEW, SCENEH} from '../../misc'
+import {SCENEW, SCENEH} from '../../misc'
 
 export default class Level11DataComponent {
 	constructor() {
@@ -19,7 +18,7 @@ export default class Level11DataComponent {
 
 		this._components = {
 			
-			'bg': new CanvasComponent(SCENEW, SCENEH, `${LEVELBGPATH}/1-1.png`, 0, 0, 'image'),
+			'bg': new CanvasComponent(SCENEW, SCENEH, CanvasComponent.SPRITES.LEVEL11, 0, 0, 'image'),
 
 			'fbc1': new FBC(0, SCENEH - FLOORH, delta * 69, FLOORH),
 
@@ -303,9 +302,7 @@ export default class Level11DataComponent {
 			
 			'ttc88': new TTC(FEx + delta * 173, FEy - delta * 4),
 			
-			'player': new PC(20, SCENEH - FLOORH - delta),
-
-			'cabc': new CABC(20, 20)
+			'player': new PC(20, SCENEH - FLOORH - delta)
 		}
 
 	}

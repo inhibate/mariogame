@@ -1,12 +1,11 @@
 
 import CanvasComponent from '../../canvasComponent'
-import {SPRITESPATH} from '../../misc/'
 
 export default class BrickBlockComponent extends CanvasComponent {
 
 	constructor(posx = 0, posy = 0) {
 
-		const [W, H, SPRITE, SX, SY, SW, SH] = [32, 32, `${SPRITESPATH}/BLOCKS.png`, 80 + (96 - 80) * 12, 112 + (128 - 112) * 5, 96 - 80, 128 - 112]
+		const [W, H, SPRITE, SX, SY, SW, SH] = [32, 32, CanvasComponent.SPRITES.BLOCKS, 80 + (96 - 80) * 12, 112 + (128 - 112) * 5, 96 - 80, 128 - 112]
 		const [DURATION, AMPLITUDE] = [150, H / 2]
 		
 		super(W, H, SPRITE, posx, posy, 'sprite', SX, SY, SW, SH)
@@ -14,7 +13,7 @@ export default class BrickBlockComponent extends CanvasComponent {
 		this.animationParameters = {DURATION, AMPLITUDE}
 	}
 
-	hit(time) {
+	animate(time, scene) {
 		
 		if (!this.animationInitialized) {
 			this.animationInitialized = true
@@ -33,10 +32,9 @@ export default class BrickBlockComponent extends CanvasComponent {
 			this.animationInitialized = this.inittime = this.initposy = undefined
 			return true
 		}
-		else {
-			this.posy = this.initposy - AMPLITUDE * Math.sin(Math.PI * durationIndex)
-			return false
-		}
+		else this.posy = this.initposy - AMPLITUDE * Math.sin(Math.PI * durationIndex)
 	}
+
+	hit(scene) { scene.bindComponentForAnimation(this.componentIdentifier) }
 
 } 

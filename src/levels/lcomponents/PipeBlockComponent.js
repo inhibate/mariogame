@@ -1,6 +1,6 @@
 
 import CanvasComponent from '../../canvasComponent'
-import {abs, SPRITESPATH} from '../../misc/'
+import {abs} from '../../misc/'
 
 export default class PipeBlockComponent extends CanvasComponent {
 
@@ -15,8 +15,6 @@ export default class PipeBlockComponent extends CanvasComponent {
 	/* @type = [4, 2] LARGE2/GREY */
 	/* @type = [5, 2] VERYLARGE2/GREY */
 	constructor(posx = 0, posy = 0, type = [1, 1]) {
-		
-		const _SPRITESPATH = `${SPRITESPATH}/PSTF.gif`
 
 		let [W, H, SX, SY, SW, SH] = []
 
@@ -42,7 +40,7 @@ export default class PipeBlockComponent extends CanvasComponent {
 			}
 		}
 
-		super(W, H, _SPRITESPATH, posx, posy, 'sprite', SX, SY, SW, SH)
+		super(W, H, CanvasComponent.SPRITES.PSTF, posx, posy, 'sprite', SX, SY, SW, SH)
 	}
 
 } 

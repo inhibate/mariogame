@@ -21,8 +21,7 @@ export default class CanvasComponent {
 		this.lastPosy = posy
 
 		if (type == 'image' || type == 'sprite') {
-			this.image = new Image()
-			this.src = filling
+			this.image = filling
 		}
 		else {
 			this.filling = filling
@@ -30,7 +29,7 @@ export default class CanvasComponent {
 
 	}
 
-	update(canvasContext) {
+	render(canvasContext) {
 		if (this.type == 'image') {
 			canvasContext.drawImage(this.image, this.posx, this.posy, this.width, this.height)
 		}

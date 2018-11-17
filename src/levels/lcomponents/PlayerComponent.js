@@ -1,6 +1,6 @@
 
 import CanvasComponent from '../../canvasComponent'
-import {SPRITESPATH, CANVASSCENEW} from '../../misc/'
+import {CANVASSCENEW} from '../../misc/'
 
 export default class PlayerComponent extends CanvasComponent {
 
@@ -10,7 +10,7 @@ export default class PlayerComponent extends CanvasComponent {
 		const STANDING = [[224, 43, 237 - 224, 60 - 43] /*L*/, [276, 43, 289 - 276, 60 - 43]]
 
 		const [DX, HEIGHT, HEIGHTADDITIONAL, DURATION, DURATIONADDITIONAL] = [5.5, 64, 100, 150, 100]
-		const [W, H, SPRITE, SX, SY, SW, SH] = [32, 32, `${SPRITESPATH}/CHARACTERS.png`, STANDING[1][0], STANDING[1][1], STANDING[1][2], STANDING[1][3]]
+		const [W, H, SPRITE, SX, SY, SW, SH] = [32, 32, CanvasComponent.SPRITES.CHARACTERS, STANDING[1][0], STANDING[1][1], STANDING[1][2], STANDING[1][3]]
 		
 		super(W, H, SPRITE, posx, posy, 'sprite', SX, SY, SW, SH)
 		
@@ -322,12 +322,7 @@ export default class PlayerComponent extends CanvasComponent {
 			}
 			else {
 				if (containsBTYPE) {
-					collisions.collisions.filter(collision => collision.collisionType == collisions.BTYPE).forEach(
-						collision => {
-							const [animate, componentIdentifier] = [control.animate, collision.componentIdentifier]
-							if (animate.includes(componentIdentifier) == false) animate.push(componentIdentifier)
-						}
-					)
+					collisions.collisions.filter(collision => collision.collisionType == collisions.BTYPE).forEach(collision => scene.getBindedComponent(collision.componentIdentifier).hit(scene))
 					this.collisionType = TYPE
 					this.completedUp = true
 					updatePosyIncludingCollisionOffset(-collisions.first(TYPE).collisionOffset)
@@ -346,5 +341,22 @@ export default class PlayerComponent extends CanvasComponent {
 		if (!this.once) this.once = true
 		this.posy = this.posy + this.movement.HEIGHT * this.getDurationIndex(time, this.inittime, this.movement.DURATION)
 		this.inittime = time
+	}
+
+	control(passedTime, components, scene, control) {
+		if (control.DIRECTIONLEFT) {
+			this.moveX(passedTime, 1, components, scene, control)
+		}
+		else if (control.DIRECTIONRIGHT) {
+			this.moveX(passedTime, 0, components, scene, control)
+		}
+		else this.stand(this.direction)
+
+		if (control.DIRECTIONDOWN) {
+			if (this.moveY(passedTime, false, components, scene, control)) control.DIRECTIONDOWN = control.DIRECTIONUPDOWN = false
+		}
+		else if (control.DIRECTIONUPDOWN) {
+			if (this.moveY(passedTime, true, components, scene, control)) control.DIRECTIONUPDOWN = false
+		}
 	}
 } 
