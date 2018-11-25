@@ -337,9 +337,11 @@ export default class PlayerComponent extends CanvasComponent {
 	}
 
 	gravitate(time) {
+		const dy = 6.5
 		if (!this.once) this.inittime = time
 		if (!this.once) this.once = true
-		this.posy = this.posy + this.movement.HEIGHT * this.getDurationIndex(time, this.inittime, this.movement.DURATION)
+		//this.movement.HEIGHT * this.getDurationIndex(time, this.inittime, this.movement.DURATION)
+		this.posy = this.posy + dy
 		this.inittime = time
 	}
 

@@ -48,6 +48,7 @@ export default class CanvasScene {
 
 	move(dx, omissions) {
 		for (let i = 0; i < this._components.length; ++i) {
+			if (this._components[i].component.unmovable) continue
 			if (omissions.includes(this._components[i].componentIdentifier) == false) {
 				this._components[i].component.posx += dx
 			}

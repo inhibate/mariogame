@@ -7,6 +7,8 @@ import BBC from '../lcomponents/BrickBlockComponent'
 import PBC from '../lcomponents/PipeBlockComponent'
 import FBC from '../lcomponents/FloorBlockComponent'
 
+import CoinBonusComponent from '../lcomponents/bonus/CoinBonusComponent'
+
 import PC from '../lcomponents/PlayerComponent'
 
 import {SCENEW, SCENEH} from '../../misc'
@@ -28,11 +30,13 @@ export default class Level11DataComponent {
 
 			'fbc4': new FBC(delta * (71 + 15 + 3 + 64 + 2), SCENEH - FLOORH, delta * 57, FLOORH),
 
-			'qbc1': new QBC(FEx, FEy),
+			'qbc1': new QBC(FEx, FEy)
+				.bindBonus(new CoinBonusComponent, 2),
 
 			'qbc2': new QBC(FEx + delta * 5, FEy),
 
-			'qbc3': new QBC(FEx + delta * 6, FEy - delta * 4),
+			'qbc3': new QBC(FEx + delta * 6, FEy - delta * 4)
+				.bindBonus(new CoinBonusComponent, 1),
 
 			'qbc4': new QBC(FEx + delta * 7, FEy),
  			
@@ -302,7 +306,7 @@ export default class Level11DataComponent {
 			
 			'ttc88': new TTC(FEx + delta * 173, FEy - delta * 4),
 			
-			'player': new PC(20, SCENEH - FLOORH - delta)
+			'player': new PC(120, SCENEH - FLOORH - delta)
 		}
 
 	}

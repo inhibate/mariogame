@@ -5,6 +5,8 @@ export default class CanvasComponent {
 	
 	constructor(w, h, filling, posx, posy, type, sx, sy, sw, sh) {
 
+		this.collidable = true
+
 		this.type = type
 		
 		this.posx = posx
@@ -56,7 +58,7 @@ export default class CanvasComponent {
 			collisions.push({componentIdentifier, collisionType, collisionOffset})
 		}
 
-		const first = (type) => {
+		const first = type => {
 			for (let i = 0; i < collisions.length; i++) if (collisions[i].collisionType == type) return collisions[i]
 		}
 		
@@ -66,7 +68,7 @@ export default class CanvasComponent {
 			
 			if (RE.test(componentIdentifier) == false) {
 
-				if (component.posx >= CANVASSCENEW || component.posx + component.width < 0) continue
+				if (component.posx >= CANVASSCENEW || component.posx + component.width < 0 || !component.collidable) continue
 
 				const collideXT = posx + width > component.posx && posx < component.posx + component.width
 				const collideYT = posy + height >= component.posy && posy < component.posy + component.height

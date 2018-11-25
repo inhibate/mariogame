@@ -3,8 +3,6 @@
 import CanvasComponent from '../../canvasComponent'
 import {randomizeNumber} from '../../misc/'
 
-import CoinABlockComponent from './CoinABlockComponent'
-
 export default class QuestionBlockComponent extends CanvasComponent {
 
 	/* @pallete = 'OW' (USED IN OVERWORLD LEVELS) */
@@ -17,7 +15,7 @@ export default class QuestionBlockComponent extends CanvasComponent {
 
 		const [W, H, SPRITE] = [32, 32, CanvasComponent.SPRITES.BLOCKS]
 
-		const [DURATION, AMPLITUDE, MAXFRAMEINDEX, DELAY] = [150, H / 2, 8, 300]
+		const [DURATION, AMPLITUDE, MAXFRAMEINDEX, DELAY] = [150, H / 2, 8, 350]
 
 		const [OW, UG, CASTLE, UW] = ['OW', 'UG', 'CASTLE', 'UW']
 
@@ -78,12 +76,13 @@ export default class QuestionBlockComponent extends CanvasComponent {
 	}
 
 	animate(time, scene) {
+
 		if (this.state == this.states.ANIMATE) {
 			const NFRAMESPASSED = this.NFRAMESPASSED || (++this.frameIndex % this.animationParameters.MAXFRAMEINDEX) == 0
 			if (NFRAMESPASSED) {
-
+				
 				this.specifySXSYSWSH()
-
+				
 				if (this.sxsyswshIndex == 0) {
 					if (!this.NFRAMESPASSED) this.NFRAMESPASSED = true
 					if (!this.inittime) this.inittime = time
@@ -93,55 +92,41 @@ export default class QuestionBlockComponent extends CanvasComponent {
 
 				this.frameIndex = 0
 				this.sxsyswshIndex = [1, 2, 1, 0][this.animateIndex]
-
+				
 				if (this.animateIndex == 3) this.animateIndex = 0
 				else this.animateIndex++
 			}
 		}
+
 		else if (this.state == this.states.HIT) {
-
+			
 			if (!this.init) {
-				this.specifySXSYSWSH(this.sxsyswshIndex = 3)
-				this.inittime = time
-				this.initposy = this.posy
+				this.NFRAMESPASSED = undefined
+				this.frameIndex = this.animateIndex = this.sxsyswshIndex = 0
+				this.specifySXSYSWSH()
 				this.init = true
-				if (this.NFRAMESPASSED !== undefined) delete this.NFRAMESPASSED
-
-				const prepareCoinABlockComponent = (shouldBind, shouldDefault) => {
-					const [component, componentIdentifier] = [this.coinABlockComponent, this.coinABlockComponentIdentifier]
-					if (shouldDefault) component.default(this.posx, this.posy, this.width, this.height)
-					if (shouldBind) {
-						scene.bindComponent(component, componentIdentifier)
-						scene.bindComponentForAnimation(componentIdentifier)
+				this.initposy = this.posy
+				this.inittime = time
+				if (this.bonusComponent) {
+					if (this.bonusIndex++ < this.bonusAmount) this.initBonusComponent(scene)
+					if (this.bonusIndex == this.bonusAmount) {
+						this.unbindBonus()
+						this.specifySXSYSWSH(this.sxsyswshIndex = 3)
 					}
 				}
-				const coinABlockComponentPrefix = 'cabc'
-
-				if (!this.coinABlockComponent) {
-					this.coinABlockComponent = new CoinABlockComponent(this.posx, this.posy, this.width, this.height)
-					this.coinABlockComponentIdentifier = `${coinABlockComponentPrefix}${randomizeNumber()}`
-					prepareCoinABlockComponent(true, false)
-				}
-				else {
-					if (scene.getBindedComponent(this.coinABlockComponentIdentifier) === this.coinABlockComponent) {
-						prepareCoinABlockComponent(false, true)
-					}
-					else {
-						prepareCoinABlockComponent(true, true)
-					}
-				}
+				else this.specifySXSYSWSH(this.sxsyswshIndex = 3)
 			}
 
 			const {DURATION, AMPLITUDE} = this.animationParameters
-
-			let ANIMATIONCOMPLETED = false
 			let durationIndex = (time - this.inittime) / DURATION
+			let ANIMATIONCOMPLETED = false			
 			if (durationIndex >= 1) ANIMATIONCOMPLETED = true
 			
 			if (ANIMATIONCOMPLETED) {
 				this.posy = this.initposy
 				this.init = this.inittime = this.initposy = undefined
-				return true
+				if (this.bonusComponent && this.bonusIndex != this.bonusAmount) this.state = this.states.ANIMATE
+				else return true
 			}
 			else this.posy = this.initposy - AMPLITUDE * Math.sin(Math.PI * durationIndex)
 		}
@@ -152,4 +137,31 @@ export default class QuestionBlockComponent extends CanvasComponent {
 		scene.bindComponentForAnimation(this.componentIdentifier)
 	}
 
+	bindBonus(bonusComponent, bonusAmount) {
+
+		const bonusComponentIdentifierPrefix = 'cabc'
+		
+		this.bonusComponentIdentifier = `${bonusComponentIdentifierPrefix}${randomizeNumber()}`
+		this.bonusIndex = 0
+		this.bonusAmount = bonusAmount
+		this.bonusComponent = bonusComponent
+		
+		this.initBonusComponent = scene => {
+			const [component, componentIdentifier] = [this.bonusComponent, this.bonusComponentIdentifier]
+			component.init(this.posx, this.posy, this.width, this.height)
+			if (scene.getBindedComponent(componentIdentifier) !== component) {
+				scene.bindComponent(component, componentIdentifier)
+				scene.bindComponentForAnimation(componentIdentifier)
+			}
+		}
+		return this
+	}
+
+	unbindBonus() {
+		delete this.bonusComponentIdentifier
+		delete this.bonusIndex
+		delete this.bonusAmount
+		delete this.bonusComponent
+		delete this.initBonusComponent
+	}
 } 
