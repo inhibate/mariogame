@@ -56,6 +56,7 @@ export default class CanvasScene {
 	}
 
 	bindComponent(component, componentIdentifier) {
+		const playerComponentIdentifier = 'player'
 		if (!componentIdentifier) {
 			const components = component._components
 			const componentIdentifiers = Object.keys(components)
@@ -68,6 +69,16 @@ export default class CanvasScene {
 		else {
 			component.componentIdentifier = componentIdentifier
 			this._components[this._components.length] = { componentIdentifier, component }
+		}
+		const componentLast = this._components[this._components.length - 1]
+		if (componentLast.componentIdentifier != playerComponentIdentifier) {
+			for (let i = 0; i < this._components.length; ++i) {
+				if (this._components[i].componentIdentifier == playerComponentIdentifier) {
+					this._components[this._components.length - 1] = this._components[i]
+					this._components[i] = componentLast
+					break
+ 				}
+			}
 		}
 	}
 

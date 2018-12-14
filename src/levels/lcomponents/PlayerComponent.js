@@ -1,6 +1,8 @@
 
 import CanvasComponent from '../../canvasComponent'
-import {CANVASSCENEW} from '../../misc/'
+import GraphicalTextComponent from './GraphicalTextComponent'
+import Collision from '../../collision'
+import {delay, CANVASSCENEW} from '../../misc/'
 
 export default class PlayerComponent extends CanvasComponent {
 
@@ -9,13 +11,14 @@ export default class PlayerComponent extends CanvasComponent {
 		const JUMPING = [[142, 45, 159 - 142, 60 - 45] /*L*/, [354, 45, 371 - 354, 60 - 45]]
 		const STANDING = [[224, 43, 237 - 224, 60 - 43] /*L*/, [276, 43, 289 - 276, 60 - 43]]
 
-		const [DX, HEIGHT, HEIGHTADDITIONAL, DURATION, DURATIONADDITIONAL] = [5.5, 64, 100, 150, 100]
+		const [DX, DY, HEIGHT, HEIGHTADDITIONAL, DURATION, DURATIONADDITIONAL] = [5.5, 6.5, 64, 100, 150, 100]
 		const [W, H, SPRITE, SX, SY, SW, SH] = [32, 32, CanvasComponent.SPRITES.CHARACTERS, STANDING[1][0], STANDING[1][1], STANDING[1][2], STANDING[1][3]]
-		
+		const [SADURATION, SADY] = [110, 4.5]
 		super(W, H, SPRITE, posx, posy, 'sprite', SX, SY, SW, SH)
 		
-		this.movement = {DX, HEIGHT, HEIGHTADDITIONAL, DURATION, DURATIONADDITIONAL}
-		this.lastPosy = posy
+		this.animationParameters = {SADURATION, SADY}
+		this.movement = {DX, DY, HEIGHT, HEIGHTADDITIONAL, DURATION, DURATIONADDITIONAL}
+		this.NPCPREFIXRE = /^(?:npc\-)/
 		
 		this.defaultWidth = W
 		this.defaultHeight = H
@@ -46,19 +49,13 @@ export default class PlayerComponent extends CanvasComponent {
 		this.runningSprite2NormalizationC = this._spriteNormalization(this.sprites.RR[2]).c
 		this.runningSprite2NormalizationW = this._spriteNormalization(this.sprites.RR[2]).w
 
-		this.ifReachedHalf = this.lastTime = this.timeBack = this.t1 = this.collisionType = this.initialDirection = this.movingY = this.inittime = this.initposy = this._initposy = this.spaceunpressed = this.spacepressed = this.duration = this.completedUp = this.once = undefined
+		this.ifReachedHalf = this.collisionType = this.initialDirection = this.movingY = this.inittime = this.initposy = this._initposy = this.spaceunpressed = this.spacepressed = this.duration = this.completedUp = undefined
 	}
 	
 	_spriteNormalization(sprite) {
 		const c = (sprite[2] - this.sprites.STANDING[0][2]) * 2
 		const w = this.defaultWidth + c
 		return {w, c}
-	}
-
-	_clearRSNC() {
-		if (this.rsnc !== 0) this.posx = this.posx - this.rsnc
-		if (this.rsnc !== 0) this.rsnc = 0
-		this.currentRunningSpriteIndex = this.currentRunningIndex = 0
 	}
 	
 	getDurationIndex(currentTime, initTime, duration) {
@@ -118,9 +115,11 @@ export default class PlayerComponent extends CanvasComponent {
 
 	stand(direction) {
 		if (!this.movingY) {
+			this.currentRunningSpriteIndex = this.currentRunningIndex = 0
 			this.width = this.defaultWidth
 			this.specifyStanding(direction)
-			this._clearRSNC()
+			if (this.rsnc !== 0) this.posx = this.posx - this.rsnc
+			if (this.rsnc !== 0) this.rsnc = 0
 			if (this.reachedHalf()) this.placeHalf()
 		}
 	}
@@ -187,12 +186,16 @@ export default class PlayerComponent extends CanvasComponent {
 			this.ifReachedHalf = true
 		}
 
-		let [posx, posy] = [this.posx, this.posy]
-		let h = this.height
-		let w = this.width
-		
+		const collisions = Collision.detect(components, this)
+		const containsLTYPE = collisions.types.includes(collisions.LTYPE)
+		const containsRTYPE = collisions.types.includes(collisions.RTYPE)
+		let TYPE;
+		if (containsLTYPE) TYPE = collisions.LTYPE
+		if (containsRTYPE) TYPE = collisions.RTYPE
+
+		if (this.NPC(scene, collisions)) return false
+
 		if (!this.movingY) {
-			const collisions = this.collisions(components, posx, posy, w, h)
 			const SHOULDMOVEDOWN = collisions.types.includes(collisions.TTYPE) == false
 			if (SHOULDMOVEDOWN) {
 				if (this.currentRunningSpriteIndex == 0) this.currentRunningSpriteIndex = this.runningSpritesAmount - 1
@@ -201,148 +204,157 @@ export default class PlayerComponent extends CanvasComponent {
 			}
 		}
 
-		if (!this.movingY) posx = this.posx - this.rsnc
-		if (!this.movingY) w = this.defaultWidth
-		
-		const collisions = this.collisions(components, posx, posy, w, h)
-		const containsLTYPE = collisions.types.includes(collisions.LTYPE)
-		const containsRTYPE = collisions.types.includes(collisions.RTYPE)
-		let TYPE;
-		if (containsLTYPE) TYPE = collisions.LTYPE
-		if (containsRTYPE) TYPE = collisions.RTYPE
-
 		if (containsLTYPE || containsRTYPE) {
-			const dx = collisions.first(TYPE).collisionOffset
-			MOVEPLAYERORSCENE(dx)
-			if (!this.movingY) this.stand(direction)
+			const collision = collisions.first(TYPE)
+			if (this.movingY) MOVEPLAYERORSCENE(collision.collisionOffset)
+			else {
+				const collidedComponent = scene.getBindedComponent(collision.componentIdentifier)
+				this.stand(direction)
+				if (TYPE == collisions.LTYPE) this.posx = collidedComponent.posx - this.width
+				if (TYPE == collisions.RTYPE) this.posx = collidedComponent.posx + collidedComponent.width
+				this.ifReachedHalf = false
+			}
 		}
 	}
 
 	moveY(time, jumping, components, scene, control) {
 
+		const updatePosyIncludingCollisionOffset = collisionOffset => this.posy = this.posy + collisionOffset
 		const ISRIGHT = this.direction == 0
-
-		const updatePosyIncludingCollisionOffset = collisionOffset => this.lastPosy = this.posy = this.posy + collisionOffset
-
+		
 		if (!this.movingY) {
+			if (ISRIGHT) this.initialDirection = 0
+			if (jumping == false) this.completedUp = true
 			if (jumping) if (ISRIGHT) this.posx = this.posx - this.jumpingSpriteNormalizationC
 			if (jumping) this.width = this.jumpingSpriteNormalizationW
-			if (jumping == false) this.completedUp = true
-			if (ISRIGHT) this.initialDirection = 0
-			this.lastTime = time
 			this.inittime = time
 			this.initposy = this._initposy = this.posy
-			this.timeBack = 0
 			this.movingY = true
 		}
 
-		const INITIALDIRECTIONRIGHT = this.initialDirection == 0
+		const [di0, di1, BTYPE] = ['di0', 'di1', 'B']
 		const MOVEDOWN = this.completedUp == true
-		const BTYPE = 'B'
-		
-		time = time - this.timeBack
 
 		if (MOVEDOWN) {
-			let [delayIndex, terminateMovementDown] = [this.duration - this.movement.DURATION]
-			
-			if (this.collisionType != BTYPE) {
-				if (!this.t1) this.t1 = time
-				if (time - this.t1 < delayIndex) terminateMovementDown = true
-			}
-
-			if (terminateMovementDown) return false
-			else this.gravitate(time)
+			if (this.collisionType != BTYPE && !this.collidedNPC) if (delay(di0, this, time, this.duration - this.movement.DURATION)) return false
+			this.gravitate()
 		}
 		else {
-			let DURATIONINDEX;
-			
-			if (control.SPACEPRESSED && !this.spaceunpressed) this.spacepressed = true
+			if (this.collidedNPC) {
+				if (delay(di1, this, time, this.animationParameters.SADURATION)) {
+					this.posy = this.posy - this.animationParameters.SADY
+				}
+				else {
+					delay.clear(di1, this)
+					this.completedUp = true
+					delete this.collidedNPC
+				}
+			}
 			else {
-				this.spacepressed = false
-				this.spaceunpressed = true
+				let DURATIONINDEX;
+				if (control.SPACEPRESSED && !this.spaceunpressed) this.spacepressed = true
+				else {
+					this.spacepressed = false
+					this.spaceunpressed = true
+				}
+				if (this.spacepressed) {
+					DURATIONINDEX = this.getDurationIndex(time, this.inittime, this.movement.DURATION)
+					this.duration = this.movement.DURATION + (this.movement.DURATIONADDITIONAL * DURATIONINDEX)
+					this.initposy = this._initposy - this.movement.HEIGHTADDITIONAL * DURATIONINDEX
+				}
+	 			DURATIONINDEX = this.getDurationIndex(time, this.inittime, this.duration)
+	 			if (DURATIONINDEX == 1) this.completedUp = true
+				this.posy = this.initposy - this.movement.HEIGHT * DURATIONINDEX
 			}
-			
-			if (this.spacepressed) {
-				DURATIONINDEX = this.getDurationIndex(time, this.inittime, this.movement.DURATION)
-				this.duration = this.movement.DURATION + (this.movement.DURATIONADDITIONAL * DURATIONINDEX)
-				this.initposy = this._initposy - this.movement.HEIGHTADDITIONAL * DURATIONINDEX
-			}
- 			
- 			DURATIONINDEX = this.getDurationIndex(time, this.inittime, this.duration)
- 			if (DURATIONINDEX == 1) this.completedUp = true
-			
-			this.posy = this.initposy - this.movement.HEIGHT * DURATIONINDEX
 		}
-
-		let [w, h] = [this.defaultWidth, this.height]
-		let posx = this.posx
-		let posy = this.posy
-		
-		if (jumping) { if (INITIALDIRECTIONRIGHT) posx = posx + this.jumpingSpriteNormalizationC }
-		else w = this.width
 
 		if (jumping)
 			this.specifyJumping(this.direction)
 		else
 			this.specifyRunning(this.direction)
 
-		const collisions = this.collisions(components, posx, posy, w, h)
+		const collisions = Collision.detect(components, this)
 		const containsTTYPE = collisions.types.includes(collisions.TTYPE)
 		const containsBTYPE = collisions.types.includes(collisions.BTYPE)
-		const containsTHROUGHTYPE = collisions.types.includes(collisions.THROUGHTYPE)
 		let TYPE;
 		if (containsTTYPE) TYPE = collisions.TTYPE
 		if (containsBTYPE) TYPE = collisions.BTYPE
+		
+		if (this.NPC(scene, collisions)) return false
 
-		if (containsTHROUGHTYPE) {
-			this.timeBack = this.timeBack + (time - this.lastTime)
-			time = time - this.timeBack
-			if (MOVEDOWN) this.gravitate(time)
-			else this.posy = this.initposy - this.movement.HEIGHT * this.getDurationIndex(time, this.inittime, this.duration)
+		if (MOVEDOWN) {
+			if (containsTTYPE) {
+				if (jumping) if (ISRIGHT) this.posx = this.posx + this.jumpingSpriteNormalizationC
+				this.movingY = undefined
+				delay.clear(di0, this)
+				updatePosyIncludingCollisionOffset(collisions.first(TYPE).collisionOffset)
+				this.stand(this.direction)
+				const cs = Collision.detect(components, this)
+				const containsLTYPE = cs.types.includes(cs.LTYPE)
+				const containsRTYPE = cs.types.includes(cs.RTYPE)
+				if (containsLTYPE) TYPE = cs.LTYPE
+				if (containsRTYPE) TYPE = cs.RTYPE
+				if (containsLTYPE || containsRTYPE) this.posx = this.posx + cs.first(TYPE).collisionOffset
+				this.collisionType = this.initialDirection = this.inittime = this.initposy = this._initposy = this.spaceunpressed = this.spacepressed = this.duration = this.completedUp = undefined
+				return true	
+			}
 		}
 		else {
-
-			if (MOVEDOWN) {
-				if (containsTTYPE) {
-					if (jumping) if (INITIALDIRECTIONRIGHT) this.posx = this.posx + this.jumpingSpriteNormalizationC
-					this.movingY = undefined
-					updatePosyIncludingCollisionOffset(collisions.first(TYPE).collisionOffset)
-					
-					this.stand(this.direction)
-					const cs = this.collisions(components, this.posx, this.posy, this.width, this.height)
-					const containsLTYPE = cs.types.includes(cs.LTYPE)
-					const containsRTYPE = cs.types.includes(cs.RTYPE)
-					if (containsLTYPE) TYPE = cs.LTYPE
-					if (containsRTYPE) TYPE = cs.RTYPE
-					if (containsLTYPE || containsRTYPE) this.posx = this.posx + cs.first(TYPE).collisionOffset
-
-					this.lastTime = this.timeBack = this.t1 = this.collisionType = this.initialDirection = this.inittime = this.initposy = this._initposy = this.spaceunpressed = this.spacepressed = this.duration = this.completedUp = this.once = undefined
-					return true
+			if (containsBTYPE) {
+				if (this.collidedNPC == true) {
+					delay.clear(di1, this)
+					delete this.collidedNPC
 				}
+				collisions.collisions.filter(collision => collision.collisionType == collisions.BTYPE).forEach(collision => scene.getBindedComponent(collision.componentIdentifier).hit(scene))
+				this.collisionType = TYPE
+				this.completedUp = true
+				updatePosyIncludingCollisionOffset(-collisions.first(TYPE).collisionOffset)
+				return false
 			}
-			else {
-				if (containsBTYPE) {
-					collisions.collisions.filter(collision => collision.collisionType == collisions.BTYPE).forEach(collision => scene.getBindedComponent(collision.componentIdentifier).hit(scene))
-					this.collisionType = TYPE
-					this.completedUp = true
-					updatePosyIncludingCollisionOffset(-collisions.first(TYPE).collisionOffset)
-					return false
-				}
-			}
-
 		}
-
-		this.lastTime = time
-		this.lastPosy = this.posy
 	}
 
-	gravitate(time) {
-		const dy = 6.5
-		if (!this.once) this.inittime = time
-		if (!this.once) this.once = true
-		//this.movement.HEIGHT * this.getDurationIndex(time, this.inittime, this.movement.DURATION)
-		this.posy = this.posy + dy
-		this.inittime = time
+	gravitate() { this.posy = this.posy + this.movement.DY }
+
+	NPC(scene, collisions) {
+		if (!collisions) collisions = Collision.detect(components, this)
+		const {TTYPE, BTYPE, LTYPE, RTYPE} = collisions
+		const NPCcollisions = collisions.collisions.filter(collision => this.NPCPREFIXRE.test(collision.componentIdentifier))
+		const die = 0 < NPCcollisions.filter(collision => collision.collisionType == BTYPE || collision.collisionType == LTYPE || collision.collisionType == RTYPE).length
+		const stomps = NPCcollisions.filter(collision => collision.collisionType == TTYPE)
+		const stompsSomeone = 0 < stomps.length
+		const collidedNPC = die || stompsSomeone
+
+		if (collidedNPC) scene.render(true)
+
+		if (die) this.die(scene)
+		else if (stompsSomeone) {
+			let scoreValue = 0
+			stomps.forEach(collision => {
+				const npccomponent = scene.getBindedComponent(collision.componentIdentifier)
+				scoreValue = scoreValue + npccomponent.scoreValue
+				npccomponent.stomp()
+			})
+			this.collideNPC(scene, scoreValue)
+		}
+		return collidedNPC
+	}
+
+	collideNPC(scene, score) {
+		this.collidedNPC = true
+		this.completedUp = false
+		const GTC = new GraphicalTextComponent(`${score}`, this.posx + 10, this.posy - 30, 1.4, 600, 35)
+		scene.bindComponentForAnimation(GTC.componentIdentifier)
+		scene.bindComponent(GTC, GTC.componentIdentifier)
+		scene.bindComponent(GTC)
+	}
+
+	die(scene) {
+		// clear componentsForAnimation & add only player
+		// change sprite
+		// delay N0 ms
+		// movement up N1 ms
+		// movement down (until end of the sceneH)
 	}
 
 	control(passedTime, components, scene, control) {

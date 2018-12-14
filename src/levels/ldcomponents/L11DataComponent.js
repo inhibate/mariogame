@@ -305,6 +305,8 @@ export default class Level11DataComponent {
 			'ttc87': new TTC(FEx + delta * 172, FEy - delta * 4),
 			
 			'ttc88': new TTC(FEx + delta * 173, FEy - delta * 4),
+
+			'ttc881': new TTC(120 + 64, SCENEH - FLOORH - delta),
 			
 			'player': new PC(120, SCENEH - FLOORH - delta)
 		}

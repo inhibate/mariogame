@@ -17,6 +17,8 @@ export default class CoinBonusComponent extends CanvasComponent {
 		this.animationParameters = {DURATION, AMPLITUDE, MAXFRAMEINDEX}
 		this.SPRITES = SPRITES
 		this.OVERPLATFORMGAP = OVERPLATFORMGAP
+
+		this.collidable = false
 	}
 
 	init(pposx, pposy, pw, ph) {

@@ -1,16 +1,18 @@
 
 import CanvasComponent from '../../canvasComponent'
-import {randomizeNumber} from '../../misc'
+import {randomizeNumber, SPACECHAR} from '../../misc'
 
 export default class GraphicalTextComponent {
 	
-	constructor(text, posx = 0, posy = 0, size = 2) {
+	constructor(text, posx = 0, posy = 0, size = 2, duration = 800, dy = 50) {
 
-		const [componentIdentifier, internalComponentPrefix] = [`gtc${randomizeNumber()}`, 'gtci']
+		const [componentIdentifier, internalComponentPrefix] = [`container-gtc${randomizeNumber()}`, 'gtc']
 		const components = {}
-		const [DURATION, DY] = [800, 50]
+		const [DURATION, DY] = [duration, dy]
 
 		const sprites = {
+
+			[SPACECHAR]: [undefined, undefined, undefined, undefined, 7 * size, 7 * size],
 
 			'0': [3, 460, 10 - 3, 7, (10 - 3) * size, 7 * size],
 			'1': [12, 460, 18 - 12, 7, (18 - 12) * size, 7 * size],
@@ -55,8 +57,14 @@ export default class GraphicalTextComponent {
 		for (let i = 0, iposx = posx; i < text.length; i++) {
 			const componentIdentifier = `${internalComponentPrefix}${ randomizeNumber() }`
 			const char = text.charAt(i).toUpperCase()
+			let instance
 			const [SX, SY, SW, SH, W, H] = sprites[char]
-			const instance = new CanvasComponent(W, H, CanvasComponent.SPRITES.GF, iposx, posy, 'sprite', SX, SY, SW, SH)
+			if (char == SPACECHAR) {
+				instance = new CanvasComponent(W, H, 'transparent', iposx, posy, 'rect')
+			}
+			else {
+				instance = new CanvasComponent(W, H, CanvasComponent.SPRITES.GF, iposx, posy, 'sprite', SX, SY, SW, SH)
+			}
 			instance.collidable = false
 			instance.unmovable = true
 			components[componentIdentifier] = instance
