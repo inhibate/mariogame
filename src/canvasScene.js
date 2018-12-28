@@ -100,6 +100,8 @@ export default class CanvasScene {
 		}
 	}
 
+	getBindedComponentsForAnimation() { return this._componentsForAnimation }
+
 	render(clearScene) {
 		if (clearScene == true) {
 			this.clear()
@@ -145,10 +147,7 @@ export default class CanvasScene {
 		const spriteImageLoad = (spriteImage, spriteName) => {
 			spritesLoadedSize++
 			this.CanvasComponent.SPRITES[spriteName] = spriteImage
-			if (spritesLoadedSize == spritesSize) {
-				this.render(false)
-				init()
-			}
+			if (spritesLoadedSize == spritesSize) init(this)
 		}
 
 		spritesEntries.forEach(sprite => {
@@ -159,4 +158,3 @@ export default class CanvasScene {
 		})
 	}
 }
-

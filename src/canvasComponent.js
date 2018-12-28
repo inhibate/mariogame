@@ -1,9 +1,7 @@
 
-import {CANVASSCENEW, isRegularExpression} from './misc/'
-
 export default class CanvasComponent {
 	
-	constructor(w, h, filling, posx, posy, type, sx, sy, sw, sh) {
+	constructor(w, h, filling, posx, posy, type, sx, sy, sw, sh, alpha = 1) {
 
 		this.collidable = true
 		this.unmovable = false
@@ -20,16 +18,20 @@ export default class CanvasComponent {
 		this.sw = sw
 		this.sh = sh
 
+		this.alpha = alpha
+
 		if (type == 'image' || type == 'sprite') {
 			this.image = filling
 		}
 		else {
 			this.filling = filling
 		}
-
 	}
 
 	render(canvasContext) {
+		const defaultAlphaIndex = 1
+		canvasContext.globalAlpha = this.alpha
+
 		if (this.type == 'image') {
 			canvasContext.drawImage(this.image, this.posx, this.posy, this.width, this.height)
 		}
@@ -40,5 +42,7 @@ export default class CanvasComponent {
 			canvasContext.fillStyle = this.filling
 			canvasContext.fillRect(this.posx, this.posy, this.width, this.height)
 		}
+
+		canvasContext.globalAlpha = defaultAlphaIndex
 	}
 }

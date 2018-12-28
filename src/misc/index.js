@@ -22,16 +22,22 @@ const isRegularExpression = value => entityClassName(value, '[object RegExp]')
 
 const randomizeNumber = () => String(Math.random()).split(/\./)[1]
 
+const each = (d, f) => setInterval(f, d)
+
+const after = (d, f) => setTimeout(f, d)
+
 const SPRITESPATH = '../textures/sprites'
 
 const LEVELBGPATH = '../textures/levels'
 
-const [CANVASSCENEW, CANVASSCENEH] = [720, 445]
+const OTHERPATH = '../textures/other'
 
-const [SCENEW, SCENEH] = [6784, 448]
+const [CANVASSCENEW, CANVASSCENEH] = [720, 480]
+
+const [SCENEW, SCENEH] = [6656, 480]
 
 const [EMPTYCHAR, SPACECHAR] = ['', '\x20']
 
 export { EMPTYCHAR, SPACECHAR }
 
-export { delay, abs, datenow, isfunc, isNumber, isObject, isRegularExpression, randomizeNumber, SPRITESPATH, LEVELBGPATH, SCENEW, SCENEH, CANVASSCENEW, CANVASSCENEH }
+export { delay, abs, datenow, isfunc, isNumber, isObject, isRegularExpression, randomizeNumber, each, after, SPRITESPATH, LEVELBGPATH, OTHERPATH, SCENEW, SCENEH, CANVASSCENEW, CANVASSCENEH }

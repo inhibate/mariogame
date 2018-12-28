@@ -2,6 +2,8 @@
 import {CANVASSCENEW, isNumber, isRegularExpression} from '../misc'
 
 export default class Collision {
+	
+	static DeleteLastPXPYWHMap() { delete Collision.LastPXPYWHMap }
 
 	static UpdateLastPXPYWHMap(components) {
 		// [{componentIdentifier, posx, posy, width, height}, {componentIdentifier, posx, posy, width, height}]
