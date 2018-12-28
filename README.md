@@ -1,3 +1,4 @@
+[![howler.js](https://s3.amazonaws.com/howler.js/howler-logo.png "howler.js")](https://howlerjs.com)
 ### What ES6SMB1 is?
 It's a Super Mario Bros (SMB) game that I programmed (or still programming) for browser using frontend-stack:
 `ES6`  `Webpack`  `HTML5 Canvas` `Babel` `Howler lib` (https://howlerjs.com/)
