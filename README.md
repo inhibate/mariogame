@@ -1,5 +1,14 @@
 # ES6SMB1
-ES6SMB1 - SMB1 (Super Mario Bros) game port using ECMAScript 6 &amp; Canvas
+What ES6SMB1 is?
+It is a SMB (Super Mario Bros) game i programmed (or still programming) using web-stack:
+
+- ES6
+- Webpack
+- HTML5 Canvas
+- Howler (https://howlerjs.com/)
+- Babel
+
+I tried to make the game authentic to original that was developed by Nintendo in 1985. Despite that the game I programmed isn't 100% authentic to the original, it's pretty playable and will immerse you in the atmosphere of old games.
 
 ### How to play?
 - cd desktop
