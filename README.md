@@ -2,9 +2,9 @@
 What ES6SMB1 is?
 It is a SMB (Super Mario Bros) game i programmed (or still programming) using web-stack:
 
-ES6
-Webpack
-- HTML5 Canvas
+`ES6`
+`Webpack`
+`HTML5 Canvas`
 - Howler (https://howlerjs.com/)
 - Babel
 
