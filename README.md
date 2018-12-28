@@ -10,6 +10,6 @@ I tried to make the game authentic to original that was developed by Nintendo in
 
 `cd es6smb1`
 
-`npm install` (install required packages via NPM)
+`npm install` (install required packages via npm)
 
 `npm run dev` (launch webpack-dev-server. It will open http://localhost:8080/ in browser automatically and launch compiled game)
