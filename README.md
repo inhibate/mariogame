@@ -7,6 +7,7 @@ I tried to make the game authentic to original that was developed by Nintendo in
 
 ### How to play?
 `cd desktop` `=>`
+
 `git clone https://github.com/hypotenuse/ES6SMB1.git` `=>`
 `cd es6smb1` `=>`
 `npm install (install required packages via NPM)` `=>`
