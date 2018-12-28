@@ -13,3 +13,6 @@ I tried to make the game authentic to original that was developed by Nintendo in
 `npm install` (install required packages)
 
 `npm run dev` (launch webpack-dev-server. It will automatically open http://localhost:8080/ in browser and launch compiled game)
+### License
+Copyright (c) 2018-2019 Neumann Ivan.
+Released under the MIT License.
