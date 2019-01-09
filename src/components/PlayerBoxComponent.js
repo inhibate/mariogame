@@ -4,8 +4,10 @@ import CanvasComponent from '../canvasComponent'
 import Collision from '../collision'
 import GraphicalTextContainer from './container/GraphicalTextContainer'
 
-import {SFX, Music} from '../sound'
+import Display from '../display'
 import Stat from '../stat'
+
+import {SFX, Music} from '../sound'
 
 export default class PlayerBoxComponent extends CanvasComponent {
 
@@ -69,6 +71,8 @@ export default class PlayerBoxComponent extends CanvasComponent {
 		if (DURATIONINDEX >= 1) DURATIONINDEX = 1
 		return DURATIONINDEX
 	}
+
+	underScene() { return this.posy - 50 > CANVASSCENEH }
 
 	reachedHalf() { return this.posx + this.width / 2 >= CANVASSCENEW / 2 }
 
@@ -223,9 +227,8 @@ export default class PlayerBoxComponent extends CanvasComponent {
 			else {
 				const collidedComponent = scene.getBindedComponent(collision.componentIdentifier)
 				this.stand(direction)
-				if (TYPE == collisions.LTYPE) this.posx = collidedComponent.posx - this.width
-				if (TYPE == collisions.RTYPE) this.posx = collidedComponent.posx + collidedComponent.width
-				this.ifReachedHalf = false
+				if (TYPE == collisions.LTYPE) MOVEPLAYERORSCENE(collidedComponent.posx - (this.posx + this.width))
+				if (TYPE == collisions.RTYPE) MOVEPLAYERORSCENE((collidedComponent.posx + collidedComponent.width) - this.posx)
 			}
 		}
 	}
@@ -251,7 +254,8 @@ export default class PlayerBoxComponent extends CanvasComponent {
 
 		if (MOVEDOWN) {
 			if (this.collisionType != BTYPE && !this.collidedNPC) if (delay(di0, this, time, this.duration - this.movement.DURATION)) return false
-			this.gravitate()
+			const ifUnderScene = this.gravitate(scene)
+			if (ifUnderScene) this.die(scene, false, true)
 		}
 		else {
 			if (this.collidedNPC) {
@@ -330,8 +334,6 @@ export default class PlayerBoxComponent extends CanvasComponent {
 		}
 	}
 
-	gravitate() { this.posy = this.posy + this.movement.DY }
-
 	NPC(scene, collisions) {
 		if (!collisions) collisions = Collision.detect(components, this)
 		const {TTYPE, BTYPE, LTYPE, RTYPE} = collisions
@@ -341,7 +343,7 @@ export default class PlayerBoxComponent extends CanvasComponent {
 		const stompsSomeone = 0 < stomps.length
 		const collidedNPC = die || stompsSomeone
 		
-		if (die) this.die(scene)
+		if (die) this.die(scene, true, true)
 		else if (stompsSomeone) {
 			let scoreValue = 0
 			stomps.forEach(collision => {
@@ -365,23 +367,38 @@ export default class PlayerBoxComponent extends CanvasComponent {
 		Stat.score(scene, score)
 	}
 
+	gravitate(scene) {
+		this.posy = this.posy + this.movement.DY
+		return this.underScene()
+	}
+
 	animate(time, scene) {
-		const [N0, N1, di2, di3] = [450, 400, 'di2', 'di3']
+		const [N0, N1, di2, di3] = [400, 400, 'di2', 'di3']
 		if (delay(di2, this, time, N0)) return false
 		if (delay(di3, this, time, N1)) {
 			this.posy = this.posy - (this.movement.DY - 2)
 		}
 		else {
-			if (this.posy > CANVASSCENEH) {
+			const ifUnderScene = this.gravitate(scene)
+			if (ifUnderScene) {
+				const completeAnimationMethodCreated = '_completeAnimation' in this
 				delay.clear(di2, this)
 				delay.clear(di3, this)
+				if (completeAnimationMethodCreated) this._completeAnimation()
 				return true
 			}
-			this.gravitate()
 		}
 	}
 	
-	die(scene) {
+	die(scene, shouldAnimate, playSFX) {
+		
+		this.specifyDying()
+		this.died = true
+		this.width = this.defaultWidth
+		this.height = this.defaultHeight
+		Stat.freezeTime(scene)
+		Music.stopBackgroundMusic()
+		
 		const containerNPCRE = /^container\-npc/
 		const componentsForAnimation = scene.getBindedComponentsForAnimation()
 		let i = -1
@@ -392,36 +409,90 @@ export default class PlayerBoxComponent extends CanvasComponent {
 				i = i - 1
 			}
 		}
-		this.specifyDying()
-		this.died = true
-		this.width = this.defaultWidth
-		this.height = this.defaultHeight
-		scene.bindComponentForAnimation(this.componentIdentifier)
-		Music.die.play()
-		Music.stopLevelMusic()
+		
+		const defineDeathType = scene => {
+			const displayTypes = ['I1', 'I2', 'I3']
+			const delay = 3000
+			const display = type => after(delay, () => {
+				Display[type](scene)
+				if (type != displayTypes[0]) SFX.gameover.play()
+			})
+			if (Stat.timeSpent()) display(displayTypes[1])
+			else {
+				Stat.lives(scene, -1)
+				if (Stat.livesSpent()) display(displayTypes[2])
+				else {
+					Stat.currentTime = Stat.parameters.defaults.time
+					display(displayTypes[0])
+				}
+			}
+		}
+
+		if (playSFX) SFX.die.play()
+
+		if (shouldAnimate) {
+			scene.bindComponentForAnimation(this.componentIdentifier)
+			new Promise(resolve => this._completeAnimation = () => resolve()).then(() => defineDeathType(scene))
+		}
+		else defineDeathType(scene)
+	}
+
+	penetrate(time, components, scene, control) {
+		if (!this.movingY) {
+			if (control.DOWNPRESSED == true) {
+				
+				if (this._cannotPenetrate || this.penetrating) return false
+
+				const acceptableBoundaries = (pipe, player, delta = 4) => player.posx > pipe.posx + delta && player.posx + player.width < pipe.posx + pipe.width - delta
+
+				const pipeBoxComponentPrefixRE = /^(pbc)/i
+				const collisions = Collision.detect(components, this)
+				const containsTTYPE = collisions.types.includes(collisions.TTYPE)
+
+				if (containsTTYPE) {
+					const identifier = collisions.first(collisions.TTYPE).componentIdentifier
+					const isPipeBox = pipeBoxComponentPrefixRE.test(identifier)
+					if (isPipeBox) {
+						const pipeBox = scene.getBindedComponent(identifier)
+						if (pipeBox.penetrationAllowed) {
+							if (acceptableBoundaries(pipeBox, this)) {
+								SFX.warp.play()
+								this.penetrating = true
+							}
+						}
+						else this._cannotPenetrate = true
+					}
+					else this._cannotPenetrate = true
+				}
+				else this._cannotPenetrate = true
+			}
+			else this._cannotPenetrate = false
+		}
 	}
 
 	control(passedTime, components, scene, control) {
 				
-		const isNotDied = () => this.died == false
+		const terminate = () => this.died || this.penetrating
 
-		if (isNotDied()) {
-			if (control.DIRECTIONLEFT) {
-				this.moveX(passedTime, 1, components, scene, control)
-			}
-			else if (control.DIRECTIONRIGHT) {
-				this.moveX(passedTime, 0, components, scene, control)
-			}
-			else this.stand(this.direction)
+		if (terminate()) return false
+
+		if (control.DIRECTIONLEFT) {
+			this.moveX(passedTime, 1, components, scene, control)
+		}
+		else if (control.DIRECTIONRIGHT) {
+			this.moveX(passedTime, 0, components, scene, control)
+		}
+		else this.stand(this.direction)
+
+		if (terminate()) return false
+
+		if (control.DIRECTIONDOWN) {
+			if (this.moveY(passedTime, false, components, scene, control)) control.DIRECTIONDOWN = control.DIRECTIONUPDOWN = false
+		}
+		else if (control.DIRECTIONUPDOWN) {
+			if (this.moveY(passedTime, true, components, scene, control)) control.DIRECTIONUPDOWN = false
 		}
 
-		if (isNotDied()) {
-			if (control.DIRECTIONDOWN) {
-				if (this.moveY(passedTime, false, components, scene, control)) control.DIRECTIONDOWN = control.DIRECTIONUPDOWN = false
-			}
-			else if (control.DIRECTIONUPDOWN) {
-				if (this.moveY(passedTime, true, components, scene, control)) control.DIRECTIONUPDOWN = false
-			}
-		}
+		this.penetrate(passedTime, components, scene, control)
 	}
-} 
+}

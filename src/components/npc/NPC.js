@@ -85,7 +85,7 @@ class NPC extends CanvasComponent {
 			let collided = false
 			state = this.lookForCollisions(scene)
 			if (state.PLAYER == 1 || state.PLAYER == 2) collided = true
-			if (state.PLAYER == 1) scene.getBindedComponent(playerComponentIdentifier).die(scene)
+			if (state.PLAYER == 1) scene.getBindedComponent(playerComponentIdentifier).die(scene, true, true)
 			if (state.PLAYER == 2) scene.getBindedComponent(playerComponentIdentifier).collideNPC(scene, this.scoreValue)
 			if (state.PLAYER == 2) this.stomp()
 			return collided

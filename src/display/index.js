@@ -18,6 +18,7 @@ import {SFX, Music} from '../sound'
 class Display {
 
 	static clear(scene) {
+		RAF.endLaunched()
 		Collision.DeleteLastPXPYWHMap()
 		Control.clear()
 		const components = scene.getAllBindings()
@@ -27,7 +28,8 @@ class Display {
 	}
 	
 	static I0(scene) {
-		const [TX1, TX2, TXS, ESImageIdentifier, BGIdentifier] = ['2018 PROGRAMMED BY NEUMANN IVAN', 'PRESS ENTER TO START', 1.75, 'es', 'bg']
+
+		const [TX1, TXS, ESImageIdentifier, BGIdentifier] = ['2018 PROGRAMMED BY NEUMANN IVAN', 1.75, 'es', 'bg']
 		const [DURATION, DELAY, GTCRE, U] = [250, 1500, /^gtc\-/]
 
 		let [inittime, animationStage1, animationStage2, animationStage3, animationStage4, animationStage5, animationStage6, animationStage7, animationStage8, animationStage9, animationStage10] = []
@@ -98,25 +100,86 @@ class Display {
 				else animationStage9 = true
 			}
 			else if (!animationStage10) {
-				scene.bindComponent(new GraphicalTextContainer(TX2, (CANVASSCENEW - 7 * TXS * TX2.length) / 2, (CANVASSCENEH - 7 * TXS) / 2, TXS, U, U, 1))
 				RAF.endLaunched()
-				Keyboard.ENTER(() => Display.I1(scene))
+				Display.I4(scene)
 			}
 			scene.render(true)
 		})
 	}
 	
 	static I1(scene) {
-		Display.clear(scene)
+		const world = world => after(3e3, () => this[world](scene))
+		this.clear(scene)
+		
 		Stat.display(scene, 1, 0, 1)
 		scene.render(true)
-		after(3e3, () => Display.L11(scene))
+		
+		switch (Stat.currentWorld) {
+			case 11: world('L11'); break
+			case 12: world('L12'); break
+			case 13: world('L13'); break
+			case 14: world('L14'); break
+			case 21: world('L21'); break
+			case 22: world('L22'); break
+			case 23: world('L23'); break
+			case 24: world('L24'); break
+			case 31: world('L31'); break
+			case 32: world('L32'); break
+			case 33: world('L33'); break
+			case 34: world('L34'); break
+			case 41: world('L41'); break
+			case 42: world('L42'); break
+			case 43: world('L43'); break
+			case 44: world('L44'); break
+			case 51: world('L51'); break
+			case 52: world('L52'); break
+			case 53: world('L53'); break
+			case 54: world('L54'); break
+			case 61: world('L61'); break
+			case 62: world('L62'); break
+			case 63: world('L63'); break
+			case 64: world('L64'); break
+			case 71: world('L71'); break
+			case 72: world('L72'); break
+			case 73: world('L73'); break
+			case 74: world('L74'); break
+			case 81: world('L81'); break
+			case 82: world('L82'); break
+			case 83: world('L83'); break
+			case 84: world('L84'); break
+		}
 	}
 
-	static I2(scene) {}
+	static I2(scene) {
+		const [TX1, TXS, DELAY] = ['TIME UP', 2, 3e3]
+		this.clear(scene)
+		Stat.display(scene, 1, 0, 0)
+		scene.bindComponent(new GraphicalTextContainer(TX1, (CANVASSCENEW - 7 * TXS * TX1.length) / 2, (CANVASSCENEH - 7 * TXS) / 2, TXS))
+		scene.render(true)
+		after(DELAY, () => this.I3(scene))
+	}
+
+	static I3(scene) {
+		const [TX1, TXS, DELAY] = ['GAME OVER', 2, 10e3]
+		this.clear(scene)
+		Stat.display(scene, 1, 0, 0)
+		scene.bindComponent(new GraphicalTextContainer(TX1, (CANVASSCENEW - 7 * TXS * TX1.length) / 2, (CANVASSCENEH - 7 * TXS) / 2, TXS))
+		scene.render(true)
+		after(DELAY, () => this.I4(scene, true))
+	}
+
+	static I4(scene, tryAgainText = false) {
+		const [TX1, TXS, BGIdentifier] = [`PRESS ENTER TO ${ tryAgainText ? 'TRY AGAIN' : 'START' }`, 1.75, 'bg']
+		this.clear(scene)
+		Stat.default()
+		scene.bindComponent(new CanvasComponent(CANVASSCENEW, CANVASSCENEH, '#000', 0, 0), BGIdentifier)
+		scene.bindComponent(new GraphicalTextContainer(TX1, (CANVASSCENEW - 7 * TXS * TX1.length) / 2, (CANVASSCENEH - 7 * TXS) / 2, TXS))
+		scene.render(true)
+		Keyboard.ENTER(() => this.I1(scene))
+	}
 
 	static L11(scene) {
-		Display.clear(scene)
+		this.clear(scene)
 		const isQBC = componentIdentifier => /^(qbc)/i.test(componentIdentifier)
 		const [playerBoxComponentIdentifier, delta, FLOORH] = ['player', 32, 64]
 		const {NPCComponents, NCCComponents} = new L11Container()
@@ -135,9 +198,9 @@ class Display {
 		
 		Control.init()
 		// add onload event
-		Music.initLevelMusic(Music.overworld)
-		Music.levelMusic.play()
-
+		Music.initBackgroundMusic('overworld')
+		Music.playBackgroundMusic()
+		
 		Stat.display(scene, 0, 1, 0)
 
 		RAF.launch(passedTime => {
@@ -151,8 +214,5 @@ class Display {
 
 	static L12(scene) {}
 }
-
-PlayerBoxComponent.I1 = NPC.I1 = Display.I1
-PlayerBoxComponent.I2 = NPC.I2 = Display.I2
 
 export default Display

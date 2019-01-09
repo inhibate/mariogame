@@ -14,7 +14,7 @@ export default class PipeBoxComponent extends CanvasComponent {
 	/* @type = [3, 2] LARGE/GREY */
 	/* @type = [4, 2] LARGE2/GREY */
 	/* @type = [5, 2] VERYLARGE2/GREY */
-	constructor(posx = 0, posy = 0, type = [1, 1]) {
+	constructor(posx = 0, posy = 0, type = [1, 1], penetrationAllowed = false) {
 
 		let [W, H, SX, SY, SW, SH] = []
 
@@ -41,6 +41,8 @@ export default class PipeBoxComponent extends CanvasComponent {
 		}
 
 		super(W, H, CanvasComponent.SPRITES.PSTF, posx, posy, 'sprite', SX, SY, SW, SH)
+
+		this.penetrationAllowed = penetrationAllowed
 	}
 
 } 

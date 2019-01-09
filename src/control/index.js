@@ -1,8 +1,8 @@
 
 import Keyboard from '../keyboard'
 
-let [SPACEPRESSED, DIRECTIONLEFT, DIRECTIONRIGHT, DIRECTIONUPDOWN, DIRECTIONDOWN] = []
-const control = {SPACEPRESSED, DIRECTIONLEFT, DIRECTIONRIGHT, DIRECTIONUPDOWN, DIRECTIONDOWN}
+let [SPACEPRESSED, DOWNPRESSED, DIRECTIONLEFT, DIRECTIONRIGHT, DIRECTIONUPDOWN, DIRECTIONDOWN] = []
+const control = {SPACEPRESSED, DOWNPRESSED, DIRECTIONLEFT, DIRECTIONRIGHT, DIRECTIONUPDOWN, DIRECTIONDOWN}
 
 control.init = () => {
 
@@ -16,8 +16,10 @@ control.init = () => {
 		control.DIRECTIONRIGHT = code == 39
 	}, () => control.DIRECTIONLEFT = control.DIRECTIONRIGHT = false)
 
+	Keyboard.DOWN(() => control.DOWNPRESSED = true, () => control.DOWNPRESSED = false)
+
 }
 
-control.clear = () => Keyboard.detachEvents(control.SPACEPRESSED = control.DIRECTIONLEFT = control.DIRECTIONRIGHT = control.DIRECTIONUPDOWN = control.DIRECTIONDOWN = undefined)
+control.clear = () => Keyboard.detachEvents(control.SPACEPRESSED = control.DOWNPRESSED = control.DIRECTIONLEFT = control.DIRECTIONRIGHT = control.DIRECTIONUPDOWN = control.DIRECTIONDOWN = undefined)
 
 export default control

@@ -26,6 +26,10 @@ const each = (d, f) => setInterval(f, d)
 
 const after = (d, f) => setTimeout(f, d)
 
+const precision = (number, precision) => Math.round(number * (10 ** precision)) / (10 ** precision)
+
+const randomize = (min, max) => Math.round(min - 0.5 + Math.random() * (max - min + 1))
+
 const SPRITESPATH = '../textures/sprites'
 
 const LEVELBGPATH = '../textures/levels'
@@ -38,6 +42,6 @@ const [SCENEW, SCENEH] = [6656, 480]
 
 const [EMPTYCHAR, SPACECHAR] = ['', '\x20']
 
-export { EMPTYCHAR, SPACECHAR }
+export { EMPTYCHAR, SPACECHAR, SPRITESPATH, LEVELBGPATH, OTHERPATH, SCENEW, SCENEH, CANVASSCENEW, CANVASSCENEH }
 
-export { delay, abs, datenow, isfunc, isNumber, isObject, isRegularExpression, randomizeNumber, each, after, SPRITESPATH, LEVELBGPATH, OTHERPATH, SCENEW, SCENEH, CANVASSCENEW, CANVASSCENEH }
+export { delay, abs, datenow, isfunc, isNumber, isObject, isRegularExpression, randomizeNumber, each, after, precision, randomize }

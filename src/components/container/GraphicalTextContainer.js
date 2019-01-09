@@ -15,7 +15,7 @@ export default class GraphicalTextContainer {
 			[SPACECHAR]: [U, U, U, U, 7 * size, 7 * size],
 
 			'0': [3, 460, 10 - 3, 7, (10 - 3) * size, 7 * size],
-			'1': [12, 460, 18 - 12, 7, (18 - 12) * size, 7 * size],
+			'1': [11, 460, 18 - 11, 7, (18 - 11) * size, 7 * size],
 			'2': [19, 460, 26 - 19, 7, (26 - 19) * size, 7 * size],
 			'3': [27, 460, 34 - 27, 7, (34 - 27) * size, 7 * size],
 			'4': [35, 460, 42 - 35, 7, (42 - 35) * size, 7 * size],

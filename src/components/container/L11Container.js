@@ -52,7 +52,7 @@ export default class L11Container {
 
 			'pbc3': new PBC(FEx + delta * 30, FEy, [3, 1]),
 
-			'pbc4': new PBC(FEx + delta * 41, FEy, [3, 1]),
+			'pbc4': new PBC(FEx + delta * 41, FEy, [3, 1], true),
 
  			'bbc4': new BBC(FEx + delta * 61, FEy),
 
