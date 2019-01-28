@@ -37,17 +37,21 @@ class Stat {
 
 	static default() {
 		const defaults = this.parameters.defaults;
-		[this.scoreValue, this.coinsAmount, this.currentLives, this.currentWorld, this.currentTime] = [defaults.score, defaults.coins, defaults.lives, defaults.world, defaults.time]
+		[this.scoreValue, this.coinsAmount, this.currentLives, this.currentWorld, this.currentTime] = [defaults.score, defaults.coins, defaults.lives, defaults.world, defaults.time];
 		return this
 	}
 
-	static time(scene, time) {
+	static time(scene, time, animate) {
 		this.currentTime = time
 		const {X1, Y1, SIZE} = this.parameters
 		const containerInstance = new GraphicalTextContainer(this._zeroPrefixes(this.currentTime, 3), 510 + X1, 26 + Y1, SIZE)
 		this.clear(scene, this._timeIdentifiers)
 		this._timeIdentifiers = keys(containerInstance._components)
 		scene.bindComponent(containerInstance)
+		if (animate) {
+			scene.bindComponent(this, this.identifier)
+			scene.bindComponentForAnimation(this.identifier)
+		}
 	}
 	
 	static world(scene, world) {
@@ -86,13 +90,9 @@ class Stat {
 		
 		if (displayBlackBackground) scene.bindComponent(new CanvasComponent(CANVASSCENEW, CANVASSCENEH, BGC, 0, 0), BGIdentifier)
 		
-		scene.bindComponent(new CoinstatBoxComponent(200 + X1, 26 + Y1, true, false), coinstatIdentifier)
+		if (!displayBlackBackground) scene.bindComponentForAnimation(coinstatIdentifier)
 		
-		if (false == displayBlackBackground) {
-			scene.bindComponent(this, this.identifier)
-			scene.bindComponentForAnimation(this.identifier)
-			scene.bindComponentForAnimation(coinstatIdentifier)
-		}
+		scene.bindComponent(new CoinstatBoxComponent(200 + X1, 26 + Y1, true, false), coinstatIdentifier)
 
 		scene.bindComponent(new GraphicalTextContainer(TXDASH, 387 + X1, 33 + Y1, SIZE))
 		scene.bindComponent(new GraphicalTextContainer(TXCROSS, 222 + X1, 30 + Y1, SIZE))
@@ -102,6 +102,8 @@ class Stat {
 		this.score(scene, 0)
 		this.coins(scene, 0)
 		this.world(scene, this.currentWorld)
+		
+		if (displayTime) this.time(scene, this.currentTime, true)
 
 		if (displayLives) {
 			scene.bindComponent(new GraphicalTextContainer(TXWORLD, 270 + X2, 150 + Y2, SIZE))
@@ -112,8 +114,6 @@ class Stat {
 			scene.bindComponent(new GraphicalTextContainer(TXCROSS, 340 + X2, 212 + Y2, SIZE))
 			scene.bindComponent(new GraphicalTextContainer(`${this.currentLives}`, 382 + X2, 208 + Y2, SIZE))
 		}
-
-		if (displayTime) this.time(scene, this.currentTime)
 	}
 
 	static animate(time, scene) {

@@ -1,25 +1,28 @@
 
-import {CANVASSCENEW, CANVASSCENEH, SCENEH, EMPTYCHAR, after} from '../misc'
-import CanvasComponent from '../canvasComponent'
+import {CANVASSCENEW, CANVASSCENEH, EMPTYCHAR, after} from '../misc'
 import RAF from '../raf'
 import Keyboard from '../keyboard'
 import Control from '../control'
 import Collision from '../collision'
 
+import CanvasComponent from '../canvasComponent'
+import PlayerBoxComponent from '../components/PlayerBoxComponent'
+
 import GraphicalTextContainer from '../components/container/GraphicalTextContainer'
 import L11Container from '../components/container/L11Container'
 import NPCContainer from '../components/container/NPCContainer'
-import NPC from '../components/npc/NPC'
-import PlayerBoxComponent from '../components/PlayerBoxComponent'
+
 import Stat from '../stat'
 
 import {SFX, Music} from '../sound'
+
+const [BGIdentifier, playerBoxComponentIdentifier] = ['bg', 'player']
 
 class Display {
 
 	static clear(scene) {
 		RAF.endLaunched()
-		Collision.DeleteLastPXPYWHMap()
+		Collision.deleteLastPXPYWHMap()
 		Control.clear()
 		const components = scene.getAllBindings()
 		const componentsForAnimation = scene.getBindedComponentsForAnimation()
@@ -29,7 +32,7 @@ class Display {
 	
 	static I0(scene) {
 
-		const [TX1, TXS, ESImageIdentifier, BGIdentifier] = ['2018 PROGRAMMED BY NEUMANN IVAN', 1.75, 'es', 'bg']
+		const [TX1, TXS, ESImageIdentifier] = ['\u00A9 2018 PROGRAMMED BY NEUMANN IVAN', 1.75, 'es']
 		const [DURATION, DELAY, GTCRE, U] = [250, 1500, /^gtc\-/]
 
 		let [inittime, animationStage1, animationStage2, animationStage3, animationStage4, animationStage5, animationStage6, animationStage7, animationStage8, animationStage9, animationStage10] = []
@@ -169,7 +172,7 @@ class Display {
 	}
 
 	static I4(scene, tryAgainText = false) {
-		const [TX1, TXS, BGIdentifier] = [`PRESS ENTER TO ${ tryAgainText ? 'TRY AGAIN' : 'START' }`, 1.75, 'bg']
+		const [TX1, TXS] = [`PRESS ENTER TO ${ tryAgainText ? 'TRY AGAIN' : 'START' }`, 1.75]
 		this.clear(scene)
 		Stat.default()
 		scene.bindComponent(new CanvasComponent(CANVASSCENEW, CANVASSCENEH, '#000', 0, 0), BGIdentifier)
@@ -178,15 +181,30 @@ class Display {
 		Keyboard.ENTER(() => this.I1(scene))
 	}
 
-	static L11(scene) {
+	static I5(scene, locationLoadingData) {
+		const [DELAY] = [550]
+		this.clear(scene)
+		scene.bindComponent(new CanvasComponent(CANVASSCENEW, CANVASSCENEH, '#000', 0, 0), BGIdentifier)
+		scene.render(true)
+		after(DELAY, () => {
+			if (/^B/i.test(locationLoadingData[1])) {
+				const bonusLevelMethod = `${locationLoadingData[0]}${locationLoadingData[1]}`
+				this[bonusLevelMethod](scene)
+			}
+			else if (/^pbc/i.test(locationLoadingData[1])) {
+				this[locationLoadingData[0]](scene, locationLoadingData[1])
+			}
+		})
+	}
+
+	static L11(scene, componentIdentifier) {
 		this.clear(scene)
 		const isQBC = componentIdentifier => /^(qbc)/i.test(componentIdentifier)
-		const [playerBoxComponentIdentifier, delta, FLOORH] = ['player', 32, 64]
+		const [delta, FLOORH] = [32, 64]
 		const {NPCComponents, NCCComponents} = new L11Container()
-		const playerBoxComponent = new PlayerBoxComponent(120, SCENEH - FLOORH - delta)
+		let playerBoxComponent;
 
 		scene.bindComponent({_components: NCCComponents})
-		scene.bindComponent(playerBoxComponent, playerBoxComponentIdentifier)
 
 		const NPCC = new NPCContainer(NPCComponents)
 		scene.bindComponent(NPCC)
@@ -196,15 +214,30 @@ class Display {
 		const components = scene.getAllBindings()
 		components.filter(component => isQBC(component.componentIdentifier)).forEach(component => scene.bindComponentForAnimation(component.componentIdentifier))
 		
-		Control.init()
-		// add onload event
+		if (componentIdentifier) {
+			const [pipe, additionalDx] = [scene.getBindedComponent(componentIdentifier), 100]
+			const dx = -pipe.posx + additionalDx
+			scene.move(dx)
+			Stat.display(scene, 0, 0, 0)
+			scene.bindComponent(playerBoxComponent = new PlayerBoxComponent(0, 0), playerBoxComponentIdentifier)
+			playerBoxComponent.moveFromPipe(scene, pipe, () => {
+				Control.init()
+				Stat.time(scene, Stat.currentTime, true)
+			})
+		}
+		else {
+			playerBoxComponent = new PlayerBoxComponent(120, CANVASSCENEH - FLOORH - delta)
+			scene.bindComponent(playerBoxComponent, playerBoxComponentIdentifier)
+			Control.init()
+			Stat.display(scene, 0, 1, 0)
+		}
+
 		Music.initBackgroundMusic('overworld')
-		Music.playBackgroundMusic()
-		
-		Stat.display(scene, 0, 1, 0)
+		if (Stat.currentTime > 100) Music.playBackgroundMusic()
+		else Music.playBackgroundMusicAccelerated()
 
 		RAF.launch(passedTime => {
-			Collision.UpdateLastPXPYWHMap(components)
+			Collision.updateLastPXPYWHMap(components)
 			scene.animate(passedTime)
 			playerBoxComponent.control(passedTime, components, scene, Control)
 			scene.render(true)
@@ -213,6 +246,37 @@ class Display {
 	}
 
 	static L12(scene) {}
+
+	static L11B1(scene) {
+		this.clear(scene)
+		const isQBC = componentIdentifier => /^(qbc)/i.test(componentIdentifier)
+		const isCBC = componentIdentifier => /^(cbc)/i.test(componentIdentifier)
+		const [delta, FLOORH] = [32, 64]
+		const playerBoxComponent = new PlayerBoxComponent(delta * 2, delta * 2)
+		const {B1Components} = new L11Container()
+
+		scene.bindComponent({_components: B1Components})
+		scene.bindComponent(playerBoxComponent, playerBoxComponentIdentifier)
+		const components = scene.getAllBindings()
+		components.filter(component => isQBC(component.componentIdentifier) || isCBC(component.componentIdentifier)).forEach(component => scene.bindComponentForAnimation(component.componentIdentifier))
+
+		Control.init()
+
+		Music.initBackgroundMusic('underground')
+		if (Stat.currentTime > 100) Music.playBackgroundMusic()
+		else Music.playBackgroundMusicAccelerated()
+		
+		Stat.display(scene, 0, 1, 0)
+		Control.DIRECTIONDOWN = true
+		
+		RAF.launch(passedTime => {
+			Collision.updateLastPXPYWHMap(components)
+			scene.animate(passedTime)
+			playerBoxComponent.control(passedTime, components, scene, Control)
+			scene.render(true)
+			scene.fps('#fff')
+		})
+	}
 }
 
 export default Display

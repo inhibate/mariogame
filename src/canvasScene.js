@@ -1,5 +1,5 @@
 
-import {datenow} from './misc'
+import {datenow, abs, CANVASSCENEW} from './misc'
 
 export default class CanvasScene {
 
@@ -29,7 +29,7 @@ export default class CanvasScene {
 		fps.fps = (~~((1000 / (datenow() - dp)) * (10 ** n))) / (10 ** n)
 	}
 
-	fps() {
+	fps(color) {
 		const [fps, context] = [this._fps, this._context]
 		if (!fps.fps) this._computeFPS(2)
 		if ((++fps.freqIndex % fps.freq) == 0) {
@@ -37,7 +37,7 @@ export default class CanvasScene {
 			this._computeFPS(2)
 		}
 		context.font = fps.font
-		context.fillStyle = fps.color
+		context.fillStyle = color || fps.color
 		context.fillText(`FPS ${fps.fps}`, 10, 20)
 		fps.dp = datenow()
 	}
@@ -45,8 +45,34 @@ export default class CanvasScene {
 	clear() {
 		this._context.clearRect(0, 0, this._canvas.width, this._canvas.height)
 	}
+	
+	zindex(componentIdentifier1, componentIdentifier2) /* component1 < component2 */ {
+		let [zindex1, zindex2, shouldSwap] = []
+		for (let i = 0; i < this._components.length; ++i) {
+			const wrappedComponent = this._components[i]
+			if (wrappedComponent.componentIdentifier == componentIdentifier1) zindex1 = i
+			if (wrappedComponent.componentIdentifier == componentIdentifier2) zindex2 = i
+			if (zindex1 !== undefined && zindex2 !== undefined) {
+				shouldSwap = zindex1 > zindex2
+				break
+			}
+		}
+		if (shouldSwap) {
+			const zindex1WrappedComponent = this._components[zindex1]
+			this._components[zindex1] = this._components[zindex2]
+			this._components[zindex2] = zindex1WrappedComponent
+		}
+	}
 
-	move(dx, omissions) {
+	backgroundOffset() {
+		const backgroundComponentIdentifier = 'bg'
+		const backgroundComponent = this.getBindedComponent(backgroundComponentIdentifier)
+		if (backgroundComponent) {
+			return (abs(backgroundComponent.posx) + CANVASSCENEW) - backgroundComponent.width
+		}
+	}
+
+	move(dx, omissions = []) {
 		for (let i = 0; i < this._components.length; ++i) {
 			if (this._components[i].component.unmovable) continue
 			if (omissions.includes(this._components[i].componentIdentifier) == false) {

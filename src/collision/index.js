@@ -3,9 +3,22 @@ import {CANVASSCENEW, isNumber, isRegularExpression, precision} from '../misc'
 
 export default class Collision {
 	
-	static DeleteLastPXPYWHMap() { delete Collision.LastPXPYWHMap }
+	static deleteLastPXPYWHMap() { delete Collision.LastPXPYWHMap }
 
-	static UpdateLastPXPYWHMap(components) {
+	static updateComponentInLastPXPYWHMap(componentIdentifier, map) {
+		for (let q = 0; q < Collision.LastPXPYWHMap.length; q++) {
+			const component = Collision.LastPXPYWHMap[q]
+			if (componentIdentifier == component.componentIdentifier) {
+				component.posx = map.posx
+				component.posy = map.posy
+				component.width = map.width
+				component.height = map.height
+				return true
+			}
+		}
+	}
+
+	static updateLastPXPYWHMap(components) {
 		// [{componentIdentifier, posx, posy, width, height}, {componentIdentifier, posx, posy, width, height}]
 		if (!Collision.LastPXPYWHMap) {
 			Collision.LastPXPYWHMap = []
@@ -20,20 +33,9 @@ export default class Collision {
 			for(let p = 0; p < components.length; p++) {
 				const [component, componentIdentifier] = [components[p].component, components[p].componentIdentifier]
 				const {posx, posy, width, height} = component
-				let componentExist = false
-				for (let q = 0; q < Collision.LastPXPYWHMap.length; q++) {
-					const existingComponent = Collision.LastPXPYWHMap[q]
-					if (componentIdentifier == existingComponent.componentIdentifier) {
-						existingComponent.posx = posx
-						existingComponent.posy = posy
-						existingComponent.width = width
-						existingComponent.height = height
-						componentExist = true
-						break
-					}
-				}
+				const changedExisting = this.updateComponentInLastPXPYWHMap(componentIdentifier, {posx, posy, width, height})
 				// Add new
-				if (!componentExist) Collision.LastPXPYWHMap[Collision.LastPXPYWHMap.length] = {componentIdentifier, posx, posy, width, height}
+				if (!changedExisting) Collision.LastPXPYWHMap[Collision.LastPXPYWHMap.length] = {componentIdentifier, posx, posy, width, height}
 			}
 
 			// Remove irrelevant
@@ -113,5 +115,4 @@ export default class Collision {
 		}
 		return {collisions, types, first, TTYPE, BTYPE, LTYPE, RTYPE}
 	}
-
 }

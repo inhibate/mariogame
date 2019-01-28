@@ -38,10 +38,8 @@ const OTHERPATH = '../textures/other'
 
 const [CANVASSCENEW, CANVASSCENEH] = [720, 480]
 
-const [SCENEW, SCENEH] = [6656, 480]
-
 const [EMPTYCHAR, SPACECHAR] = ['', '\x20']
 
-export { EMPTYCHAR, SPACECHAR, SPRITESPATH, LEVELBGPATH, OTHERPATH, SCENEW, SCENEH, CANVASSCENEW, CANVASSCENEH }
+export { EMPTYCHAR, SPACECHAR, SPRITESPATH, LEVELBGPATH, OTHERPATH, CANVASSCENEW, CANVASSCENEH }
 
 export { delay, abs, datenow, isfunc, isNumber, isObject, isRegularExpression, randomizeNumber, each, after, precision, randomize }

@@ -1,5 +1,5 @@
 
-import {delay, after, CANVASSCENEW, CANVASSCENEH} from '../misc/'
+import {delay, after, CANVASSCENEW, CANVASSCENEH, precision} from '../misc/'
 import CanvasComponent from '../canvasComponent'
 import Collision from '../collision'
 import GraphicalTextContainer from './container/GraphicalTextContainer'
@@ -15,16 +15,18 @@ export default class PlayerBoxComponent extends CanvasComponent {
 
 		const JUMPING = [[142, 45, 159 - 142, 60 - 45] /*L*/, [354, 45, 371 - 354, 60 - 45]]
 		const STANDING = [[224, 43, 237 - 224, 60 - 43] /*L*/, [276, 43, 289 - 276, 60 - 43]]
-		const DIE = [13, 46, 27 - 13, 60 - 46]
-
+		const SDIE = [13, 46, 27 - 13, 60 - 46]
 		const [DX, DY, HEIGHT, HEIGHTADDITIONAL, DURATION, DURATIONADDITIONAL] = [5.5, 6.5, 64, 100, 150, 100]
 		const [W, H, SPRITE, SX, SY, SW, SH] = [32, 32, CanvasComponent.SPRITES.CHARACTERS, STANDING[1][0], STANDING[1][1], STANDING[1][2], STANDING[1][3]]
 		const [SADURATION, SADY] = [110, 4.5]
+		const [IPENETRATE, LPENETRATE, DIE, FROMPIPE] = [0, 1, 2, 3]
+		
+		const identifier = 'player'
 		super(W, H, SPRITE, posx, posy, 'sprite', SX, SY, SW, SH)
 		
+		this.animationTypes = {IPENETRATE, LPENETRATE, DIE, FROMPIPE}
 		this.animationParameters = {SADURATION, SADY}
 		this.movement = {DX, DY, HEIGHT, HEIGHTADDITIONAL, DURATION, DURATIONADDITIONAL}
-		this.NPCPREFIXRE = /^(?:npc\-)/
 		
 		this.defaultWidth = W
 		this.defaultHeight = H
@@ -41,7 +43,7 @@ export default class PlayerBoxComponent extends CanvasComponent {
 			[193 - (336 - 320), 43, 336 - 320, 60 - 43]
 		]
 
-		this.sprites = {RR, RL, JUMPING, STANDING, DIE}
+		this.sprites = {RR, RL, JUMPING, STANDING, SDIE}
 		this.runningSpritesAmount = 3
 
 		this.rsnc = this.direction = this.currentRunningSpriteIndex = this.currentRunningIndex = 0
@@ -54,10 +56,9 @@ export default class PlayerBoxComponent extends CanvasComponent {
 
 		this.runningSprite2NormalizationC = this._spriteNormalization(this.sprites.RR[2]).c
 		this.runningSprite2NormalizationW = this._spriteNormalization(this.sprites.RR[2]).w
-		
-		this.died = false
 
 		this.ifReachedHalf = this.collisionType = this.initialDirection = this.movingY = this.inittime = this.initposy = this._initposy = this.spaceunpressed = this.spacepressed = this.duration = this.completedUp = undefined
+		this.componentIdentifier = identifier
 	}
 	
 	_spriteNormalization(sprite) {
@@ -124,10 +125,48 @@ export default class PlayerBoxComponent extends CanvasComponent {
 	}
 
 	specifyDying() {
-		this.sx = this.sprites.DIE[0]
-		this.sy = this.sprites.DIE[1]
-		this.sw = this.sprites.DIE[2]
-		this.sh = this.sprites.DIE[2]
+		this.sx = this.sprites.SDIE[0]
+		this.sy = this.sprites.SDIE[1]
+		this.sw = this.sprites.SDIE[2]
+		this.sh = this.sprites.SDIE[2]
+	}
+
+	specifyFrameRunning(frame, direction) {
+		const [DLEFT, DRIGHT] = [direction == 1, direction == 0]
+		if (this.currentRunningIndex++ == frame) {
+			if (DRIGHT) {
+				if (this.currentRunningSpriteIndex == 0) {
+					this.rsnc = 2
+					this.width = this.defaultWidth
+				}
+				if (this.currentRunningSpriteIndex == 1) {
+					this.rsnc = -2 * this.runningSprite1NormalizationC
+					this.width = this.runningSprite1NormalizationW
+				}
+				if (this.currentRunningSpriteIndex == 2) {
+					this.rsnc = -this.runningSprite2NormalizationC
+					this.width = this.runningSprite2NormalizationW
+				}
+			}
+			else if (DLEFT) {
+				if (this.currentRunningSpriteIndex == 0) {
+					this.rsnc = 4
+					this.width = this.defaultWidth
+				}
+				if (this.currentRunningSpriteIndex == 1) {
+					this.rsnc = this.runningSprite1NormalizationC
+					this.width = this.runningSprite1NormalizationW
+				}
+				if (this.currentRunningSpriteIndex == 2) {
+					this.rsnc = -2
+					this.width = this.runningSprite2NormalizationW
+				}
+			}
+			this.specifyRunning(direction)
+			this.currentRunningSpriteIndex = (this.currentRunningSpriteIndex + 1) % this.runningSpritesAmount
+			this.currentRunningIndex = 0
+			this.posx = this.posx + this.rsnc
+		}
 	}
 
 	stand(direction) {
@@ -137,7 +176,7 @@ export default class PlayerBoxComponent extends CanvasComponent {
 			this.specifyStanding(direction)
 			if (this.rsnc !== 0) this.posx = this.posx - this.rsnc
 			if (this.rsnc !== 0) this.rsnc = 0
-			if (this.reachedHalf()) this.placeHalf()
+			if (!this.ifSceneReachedEnd) if (this.reachedHalf()) this.placeHalf()
 		}
 	}
 
@@ -145,72 +184,45 @@ export default class PlayerBoxComponent extends CanvasComponent {
 
 		this.direction = direction
 
-		let IFREACHEDHALF = () => (this.ifReachedHalf || this.reachedHalf())
-
-		const IFLEFT = direction == 1
-		const MOVEPLAYER = !IFREACHEDHALF() || IFLEFT
+		const IFREACHEDHALF = () => (this.ifReachedHalf || this.reachedHalf())
+		const [IFLEFT, MAXFRAMEINDEX] = [direction == 1, 1]
 		
-		const MOVEPLAYERORSCENE = (dx) => {
-			if (MOVEPLAYER) this.posx = this.posx + dx
-			else scene.move(-dx, [this.componentIdentifier])
+		if (!this.ifSceneReachedEnd) this.ifSceneReachedEnd = scene.backgroundOffset() >= 0
+
+		const MOVEPLAYERORSCENE = dx => {
+			if (this.ifSceneReachedEnd || !IFREACHEDHALF() || IFLEFT) this.posx = this.posx + dx
+			else {
+				scene.move(-dx, [this.componentIdentifier])
+				const sceneOffset = scene.backgroundOffset()
+				const sceneReachedEnd = sceneOffset >= 0
+				if (sceneReachedEnd) {
+					this.ifSceneReachedEnd = true
+					scene.move(sceneOffset, [this.componentIdentifier])
+				}
+			}
 		}
 
 		if (IFLEFT) MOVEPLAYERORSCENE(-this.movement.DX)
 		else MOVEPLAYERORSCENE(this.movement.DX)
 
-		if (!this.movingY) {
-			if (!this.currentRunningIndex) {
-				if (direction === 0) {
-					if (this.currentRunningSpriteIndex == 0) {
-						this.rsnc = 2
-						this.width = this.defaultWidth
-					}
-					if (this.currentRunningSpriteIndex == 1) {
-						this.rsnc = -2 * this.runningSprite1NormalizationC
-						this.width = this.runningSprite1NormalizationW
-					}
-					if (this.currentRunningSpriteIndex == 2) {
-						this.rsnc = -this.runningSprite2NormalizationC
-						this.width = this.runningSprite2NormalizationW
-					}
-				}
-				else if (IFLEFT) {
-					if (this.currentRunningSpriteIndex == 0) {
-						this.rsnc = 4
-						this.width = this.defaultWidth
-					}
-					if (this.currentRunningSpriteIndex == 1) {
-						this.rsnc = this.runningSprite1NormalizationC
-						this.width = this.runningSprite1NormalizationW
-					}
-					if (this.currentRunningSpriteIndex == 2) {
-						this.rsnc = -2
-						this.width = this.runningSprite2NormalizationW
-					}
-				}
-				this.specifyRunning(direction)
-				this.currentRunningSpriteIndex = (this.currentRunningSpriteIndex + 1) % this.runningSpritesAmount
-				this.posx = this.posx + this.rsnc
+		if (!this.movingY) this.specifyFrameRunning(MAXFRAMEINDEX, direction)
+
+		if (!this.ifSceneReachedEnd) {
+			if (this.ifReachedHalf) { if (IFLEFT) this.ifReachedHalf = false }
+			else if (IFREACHEDHALF()) {
+				this.placeHalf()
+				this.ifReachedHalf = true
 			}
-			this.currentRunningIndex = !this.currentRunningIndex
-		}
-		
-		if (this.ifReachedHalf) {
-			if (IFLEFT) this.ifReachedHalf = false
-		}
-		else if (IFREACHEDHALF()) {
-			this.placeHalf()
-			this.ifReachedHalf = true
 		}
 
 		const collisions = Collision.detect(components, this)
+		if (this.processCollisionWithComponents(scene, collisions)) return false
+
 		const containsLTYPE = collisions.types.includes(collisions.LTYPE)
 		const containsRTYPE = collisions.types.includes(collisions.RTYPE)
 		let TYPE;
 		if (containsLTYPE) TYPE = collisions.LTYPE
 		if (containsRTYPE) TYPE = collisions.RTYPE
-
-		if (this.NPC(scene, collisions)) return false
 
 		if (!this.movingY) {
 			const SHOULDMOVEDOWN = collisions.types.includes(collisions.TTYPE) == false
@@ -292,14 +304,14 @@ export default class PlayerBoxComponent extends CanvasComponent {
 			this.specifyRunning(this.direction)
 
 		const collisions = Collision.detect(components, this)
+		if (this.processCollisionWithComponents(scene, collisions)) return false
+
 		const containsTTYPE = collisions.types.includes(collisions.TTYPE)
 		const containsBTYPE = collisions.types.includes(collisions.BTYPE)
 		let TYPE;
 		if (containsTTYPE) TYPE = collisions.TTYPE
 		if (containsBTYPE) TYPE = collisions.BTYPE
 		
-		if (this.NPC(scene, collisions)) return false
-
 		if (MOVEDOWN) {
 			if (containsTTYPE) {
 				if (jumping) if (ISRIGHT) this.posx = this.posx + this.jumpingSpriteNormalizationC
@@ -334,26 +346,55 @@ export default class PlayerBoxComponent extends CanvasComponent {
 		}
 	}
 
-	NPC(scene, collisions) {
-		if (!collisions) collisions = Collision.detect(components, this)
-		const {TTYPE, BTYPE, LTYPE, RTYPE} = collisions
-		const NPCcollisions = collisions.collisions.filter(collision => this.NPCPREFIXRE.test(collision.componentIdentifier))
-		const die = 0 < NPCcollisions.filter(collision => collision.collisionType == BTYPE || collision.collisionType == LTYPE || collision.collisionType == RTYPE).length
-		const stomps = NPCcollisions.filter(collision => collision.collisionType == TTYPE)
-		const stompsSomeone = 0 < stomps.length
-		const collidedNPC = die || stompsSomeone
-		
-		if (die) this.die(scene, true, true)
-		else if (stompsSomeone) {
-			let scoreValue = 0
-			stomps.forEach(collision => {
-				const npccomponent = scene.getBindedComponent(collision.componentIdentifier)
-				scoreValue = scoreValue + npccomponent.scoreValue
-				npccomponent.stomp()
-			})
-			this.collideNPC(scene, scoreValue)
+	processCollisionWithComponents(scene, collisions) {
+
+		if (!collisions) collisions = Collision.detect(scene.getAllBindings(), this)
+
+		const processCollisionWithNPC = () => {
+			const {TTYPE, BTYPE, LTYPE, RTYPE} = collisions
+			const NPCPREFIXRE = /^(npc\-)/
+			const NPCcollisions = collisions.collisions.filter(collision => NPCPREFIXRE.test(collision.componentIdentifier))
+			const die = 0 < NPCcollisions.filter(collision => collision.collisionType == BTYPE || collision.collisionType == LTYPE || collision.collisionType == RTYPE).length
+			const stomps = NPCcollisions.filter(collision => collision.collisionType == TTYPE)
+			const stompsSomeone = 0 < stomps.length
+			const collidesNPC = die || stompsSomeone
+			
+			if (die) this.die(scene, true, true)
+			else if (stompsSomeone) {
+				let scoreValue = 0
+				stomps.forEach(collision => {
+					const npccomponent = scene.getBindedComponent(collision.componentIdentifier)
+					scoreValue = scoreValue + npccomponent.scoreValue
+					npccomponent.stomp()
+				})
+				this.collideNPC(scene, scoreValue)
+			}
+			return collidesNPC
 		}
-		return collidedNPC
+		const processCollisionWithBonus = () => {
+			const [CBCPREFIXRE] = [/^(cbc)/]
+			const CBCcollisions = collisions.collisions.filter(collision => CBCPREFIXRE.test(collision.componentIdentifier))
+			let collidesBonus = false
+			if (0 < CBCcollisions.length) {
+				collidesBonus = true
+				CBCcollisions.forEach(collision => {
+					if (SFX.coin.playing()) SFX.coin.stop()
+					const [coinsAmount, scoreValue] = [1, 200]
+					scene.unbindComponent(collision.componentIdentifier)
+					scene.unbindComponentForAnimation(collision.componentIdentifier)
+					Stat.coins(scene, coinsAmount)
+					Stat.score(scene, scoreValue)
+					SFX.coin.play()
+				})
+			}
+			return collidesBonus
+		}
+
+		const collidesNPC = processCollisionWithNPC()
+		if (collidesNPC) return true
+		
+		const collidesBonus = processCollisionWithBonus()
+		if (collidesBonus) return true
 	}
 
 	collideNPC(scene, score) {
@@ -373,25 +414,94 @@ export default class PlayerBoxComponent extends CanvasComponent {
 	}
 
 	animate(time, scene) {
-		const [N0, N1, di2, di3] = [400, 400, 'di2', 'di3']
-		if (delay(di2, this, time, N0)) return false
-		if (delay(di3, this, time, N1)) {
-			this.posy = this.posy - (this.movement.DY - 2)
+		const completePenetration = (animationType, delay) => {
+			delete this._penetrationAnimationInitialized
+			delete this._initposy
+			delete this._inittime
+			scene.unbindComponent(this.componentIdentifier)
+			after(delay, () => {
+				Music.stopBackgroundMusic()
+				Display.I5(scene, this.pipe.out)
+			})
 		}
-		else {
-			const ifUnderScene = this.gravitate(scene)
-			if (ifUnderScene) {
+		const {DIE, IPENETRATE, LPENETRATE, FROMPIPE} = this.animationTypes
+		switch (this.animationType) {
+			case DIE: {
+				const [N0, N1, di2, di3] = [400, 400, 'di2', 'di3']
+				if (delay(di2, this, time, N0)) return false
+				if (delay(di3, this, time, N1)) {
+					this.posy = this.posy - (this.movement.DY - 2)
+				}
+				else {
+					const ifUnderScene = this.gravitate(scene)
+					if (ifUnderScene) {
+						const completeAnimationMethodCreated = '_completeAnimation' in this
+						delay.clear(di2, this)
+						delay.clear(di3, this)
+						if (completeAnimationMethodCreated) this._completeAnimation()
+						return true
+					}
+				}
+				break
+			}
+			case IPENETRATE: {
+				if (!this._penetrationAnimationInitialized) {
+					this._penetrationAnimationInitialized = true;
+					[this._initposy, this._inittime] = [this.posy, time]
+				}
+				const [FRI, DELAY, inittime, initposy, duration, dy] = [3, 350, this._inittime, this._initposy, 500, this.height + 2]
+				const DURATIONINDEX = this.getDurationIndex(time, inittime, duration)
+				this.posy = initposy + dy * DURATIONINDEX
+				this.specifyFrameRunning(FRI, this.direction)
+	 			
+	 			if (DURATIONINDEX == 1) {
+	 				completePenetration(IPENETRATE, DELAY)
+	 				return true
+	 			}
+				break
+			}
+			case LPENETRATE: {
+				const [DX, FRI, PIPEPOSX, DELAY] = [this.movement.DX / 7, 5, this.pipe.posx + 10, 2500]
+				this.posx = this.posx + DX
+				this.specifyFrameRunning(FRI, this.direction)
+
+				if (this.posx > PIPEPOSX) {
+					completePenetration(LPENETRATE, DELAY)
+	 				return true
+				}
+				break
+			}
+			case FROMPIPE: {
+				const [delayIdentifier, delayValue] = ['di1', 1800]
+				if (delay(delayIdentifier, this, time, delayValue)) return false
+
+				if (!this._animationInitialized) {
+					this._animationInitialized = true;
+					[this._initposy, this._inittime, this._dy] = [this.posy, time, (this.posy - this.pipe.posy) + this.height]
+				}
+				const [inittime, initposy, duration, dy] = [this._inittime, this._initposy, 500, this._dy]
+				const DURATIONINDEX = this.getDurationIndex(time, inittime, duration)
+				this.posy = initposy - dy * DURATIONINDEX
 				const completeAnimationMethodCreated = '_completeAnimation' in this
-				delay.clear(di2, this)
-				delay.clear(di3, this)
-				if (completeAnimationMethodCreated) this._completeAnimation()
-				return true
+				if (DURATIONINDEX == 1) {
+					delay.clear(delayIdentifier, this)
+					this.posy = this.pipe.posy - this.height
+					delete this._animationInitialized
+					delete this.pipe
+					delete this._dy
+					delete this._initposy
+					delete this._inittime
+					if (completeAnimationMethodCreated) this._completeAnimation()
+					return true
+				}
+				break
 			}
 		}
 	}
 	
 	die(scene, shouldAnimate, playSFX) {
 		
+		this.animationType = this.animationTypes.DIE
 		this.specifyDying()
 		this.died = true
 		this.width = this.defaultWidth
@@ -405,7 +515,7 @@ export default class PlayerBoxComponent extends CanvasComponent {
 		while (++i < componentsForAnimation.length) {
 			const componentIdentifier = componentsForAnimation[i]
 			if (containerNPCRE.test(componentIdentifier)) {
-				scene.unbindComponentForAnimation(componentIdentifier, 1)
+				scene.unbindComponentForAnimation(componentIdentifier)
 				i = i - 1
 			}
 		}
@@ -437,42 +547,69 @@ export default class PlayerBoxComponent extends CanvasComponent {
 		else defineDeathType(scene)
 	}
 
-	penetrate(time, components, scene, control) {
-		if (!this.movingY) {
-			if (control.DOWNPRESSED == true) {
-				
-				if (this._cannotPenetrate || this.penetrating) return false
-
-				const acceptableBoundaries = (pipe, player, delta = 4) => player.posx > pipe.posx + delta && player.posx + player.width < pipe.posx + pipe.width - delta
-
-				const pipeBoxComponentPrefixRE = /^(pbc)/i
-				const collisions = Collision.detect(components, this)
-				const containsTTYPE = collisions.types.includes(collisions.TTYPE)
-
-				if (containsTTYPE) {
-					const identifier = collisions.first(collisions.TTYPE).componentIdentifier
-					const isPipeBox = pipeBoxComponentPrefixRE.test(identifier)
-					if (isPipeBox) {
-						const pipeBox = scene.getBindedComponent(identifier)
-						if (pipeBox.penetrationAllowed) {
-							if (acceptableBoundaries(pipeBox, this)) {
-								SFX.warp.play()
-								this.penetrating = true
-							}
-						}
-						else this._cannotPenetrate = true
-					}
-					else this._cannotPenetrate = true
-				}
-				else this._cannotPenetrate = true
-			}
-			else this._cannotPenetrate = false
+	tryPenetrate(time, components, scene, control) {
+		const [IPIPERE, LPIPERE] = [/^(pbc)\d+$/i, /^(pbc)\d+p1$/i]
+		if (!this._pipes) {
+			const components = scene.getAllBindings()
+			this._pipes = components.filter(wrappedComponent => {
+				const {componentIdentifier, component} = wrappedComponent
+				const {penetrationAllowed} = component
+				return penetrationAllowed && (IPIPERE.test(componentIdentifier) || LPIPERE.test(componentIdentifier))
+			}).map(component => component.component)
 		}
+
+		const {DIRECTIONRIGHT, DOWNPRESSED} = control
+
+		if (!this.movingY && (DIRECTIONRIGHT || DOWNPRESSED)) {
+			const [IPIPETYPE, LPIPETYPE] = ['I', 'L'];
+			const penetrate = (pipe, animationType) => {
+				[this.pipe, this.animationType, this.penetrating] = [pipe, animationType, true];
+				delete this._pipes
+				Stat.freezeTime(scene)
+				SFX.warp.play()
+				scene.bindComponentForAnimation(this.componentIdentifier)
+				scene.zindex(this.componentIdentifier, pipe.componentIdentifier)
+			}
+			const p8 = number => precision(number, 8)
+			const acceptableBoundaries = (pipe, pipeType, player, delta = 3) => {
+				if (pipeType == IPIPETYPE) {
+					return p8(player.posx) > p8(pipe.posx + delta) && p8(player.posx + player.width) < p8(pipe.posx + pipe.width - delta)
+				}
+				else if (pipeType == LPIPETYPE) {
+					return p8(player.posx + player.width) >= p8(pipe.posx) && player.posy > pipe.posy
+				}
+			}
+			for (let pipe of this._pipes) {
+				const [IPIPE, LPIPE] = [IPIPERE.test(pipe.componentIdentifier), LPIPERE.test(pipe.componentIdentifier)]
+				if (DIRECTIONRIGHT && LPIPE && acceptableBoundaries(pipe, LPIPETYPE, this)) {
+					penetrate(pipe, this.animationTypes.LPENETRATE)
+					break
+				}
+				else if (DOWNPRESSED && IPIPE && acceptableBoundaries(pipe, IPIPETYPE, this)) {
+					penetrate(pipe, this.animationTypes.IPENETRATE)
+					break
+				}
+			}
+		}
+	}
+
+	moveFromPipe(scene, pipe, complete) {
+		[this.animationType, this.movingFromPipe, this.pipe] = [this.animationTypes.FROMPIPE, true, pipe];
+		const dy = 10
+		this.posx = pipe.posx + pipe.width / 2 - this.width / 2
+		this.posy = pipe.posy + dy
+		scene.zindex(this.componentIdentifier, pipe.componentIdentifier)
+		scene.bindComponentForAnimation(this.componentIdentifier)
+		new Promise(resolve => this._completeAnimation = () => resolve()).then(() => {
+			this.movingFromPipe = false
+			Collision.updateComponentInLastPXPYWHMap(this.componentIdentifier, this)
+			complete()
+		})
 	}
 
 	control(passedTime, components, scene, control) {
 				
-		const terminate = () => this.died || this.penetrating
+		const terminate = () => this.died || this.penetrating || this.movingFromPipe
 
 		if (terminate()) return false
 
@@ -493,6 +630,6 @@ export default class PlayerBoxComponent extends CanvasComponent {
 			if (this.moveY(passedTime, true, components, scene, control)) control.DIRECTIONUPDOWN = false
 		}
 
-		this.penetrate(passedTime, components, scene, control)
+		this.tryPenetrate(passedTime, components, scene, control)
 	}
 }

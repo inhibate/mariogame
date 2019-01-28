@@ -47,10 +47,15 @@ class Music {
 		for (let sample of samples) if (sample.state() != LOADEDSTATE) loadingSamplesSize++
 		for (let sample of samples) if (sample.state() != LOADEDSTATE) sample.once(LOADEVENT, loadEventHandler)
 	}
+
 	static initBackgroundMusic(name) {
 		if (name == 'overworld') {
 			this.backgroundMusic = this.overworld
 			this.backgroundMusicAccelerated = this.overworldAccelerated
+		}
+		else if (name = 'underground') {
+			this.backgroundMusic = this.underground
+			this.backgroundMusicAccelerated = this.undergroundAccelerated
 		}
 	}
 	static playBackgroundMusic() {
@@ -84,5 +89,9 @@ class Music {
 
 Music.overworld = createHInstance(['../audio/music/Overworld.mp3'], {loop: true})
 Music.overworldAccelerated = createHInstance(['../audio/music/OverworldAccelerated.mp3'], {loop: true})
+
+Music.underground = createHInstance(['../audio/music/Underground.mp3'], {loop: true})
+Music.undergroundAccelerated = createHInstance(['../audio/music/UndergroundAccelerated.mp3'], {loop: true})
+
 
 export {SFX, Music}
