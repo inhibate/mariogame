@@ -8,7 +8,10 @@ import BBC from '../BrickBoxComponent'
 import PBC from '../PipeBoxComponent'
 import TBC from '../TransparentBoxComponent'
 import CBC from '../CoinBoxComponent'
+import FlagpoleBoxComponent from '../FlagpoleBoxComponent'
 import CoinBonusComponent from '../bonus/CoinBonusComponent'
+import ControlPointComponent from '../ControlPointComponent'
+import CastleBoxComponent from '../CastleBoxComponent'
 
 import NPCGoomba from '../npc/NPCGoomba'
 
@@ -229,7 +232,10 @@ export default class L11Container {
 			'ttc86': new TTC(FEx + delta * 173, FEy - delta * 3),
 			'ttc87': new TTC(FEx + delta * 172, FEy - delta * 4),
 			'ttc88': new TTC(FEx + delta * 173, FEy - delta * 4),
-			'ttc89': new TTC(120 + 64, CANVASSCENEH - FLOORH - delta)
+			'ttc89': new TTC(120 + 64, CANVASSCENEH - FLOORH - delta),
+			'container-flagpole': new FlagpoleBoxComponent(FEx + delta * 181, CANVASSCENEH - FLOORH - delta),
+			'container-castle': new CastleBoxComponent(FEx + delta * 186, CANVASSCENEH - FLOORH - delta * 5, 0),
+			'controlpoint': new ControlPointComponent(FEx + delta * 189, CANVASSCENEH - FLOORH - delta, 1, delta, ControlPointComponent.TYPES.CASTLEENTRY)
 		}
 	}
 }

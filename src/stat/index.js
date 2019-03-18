@@ -8,6 +8,7 @@ import GraphicalTextContainer from '../components/container/GraphicalTextContain
 
 import {SFX, Music} from '../sound'
 
+const [TICK, REMAININGTIMETOPOINTS] = [0, 1]
 const {keys} = Object
 
 class Stat {
@@ -40,7 +41,7 @@ class Stat {
 		[this.scoreValue, this.coinsAmount, this.currentLives, this.currentWorld, this.currentTime] = [defaults.score, defaults.coins, defaults.lives, defaults.world, defaults.time];
 		return this
 	}
-
+	
 	static time(scene, time, animate) {
 		this.currentTime = time
 		const {X1, Y1, SIZE} = this.parameters
@@ -48,10 +49,7 @@ class Stat {
 		this.clear(scene, this._timeIdentifiers)
 		this._timeIdentifiers = keys(containerInstance._components)
 		scene.bindComponent(containerInstance)
-		if (animate) {
-			scene.bindComponent(this, this.identifier)
-			scene.bindComponentForAnimation(this.identifier)
-		}
+		if (animate) this.unfreezeTime(scene)
 	}
 	
 	static world(scene, world) {
@@ -118,25 +116,76 @@ class Stat {
 
 	static animate(time, scene) {
 		const animationParameters = this.parameters.animation
+		const {TICK, REMAININGTIMETOPOINTS} = this.animationTypes
+		const {MAXFRAMEINDEX1, MAXFRAMEINDEX2} = animationParameters
 		const playerComponentIdentifier = 'player'
-
-		if ((++animationParameters.frameIndex % animationParameters.MAXFRAMEINDEX) == 0) {
-			animationParameters.frameIndex = 0
-			this.time(scene, this.currentTime - 1)
-			if (this.time100()) {
-				Music.warning()
+		switch (this.animationType) {
+			case TICK: {
+				if (++animationParameters.frameIndex == MAXFRAMEINDEX1) {
+					animationParameters.frameIndex = 0
+					this.time(scene, this.currentTime - 1)
+					if (this.time100()) {
+						Music.warning()
+					}
+					else if (this.timeSpent()) {
+						scene.getBindedComponent(playerComponentIdentifier).die(scene, true, true)
+					}
+				}
+				break
 			}
-			else if (this.timeSpent()) {
-				scene.getBindedComponent(playerComponentIdentifier).die(scene, true, true)
+			case REMAININGTIMETOPOINTS: {
+				if (++animationParameters.frameIndex == MAXFRAMEINDEX2) {
+					const [points, time] = [50, 2]
+					let [currentTime, earnedPoints] = [this.currentTime - time, points * time]
+					animationParameters.frameIndex = 0
+					if (currentTime == -1) {
+						currentTime = 0
+						earnedPoints = earnedPoints / time
+					}
+					this.time(scene, currentTime)
+					this.score(scene, earnedPoints)
+					if (currentTime == 0) {
+						this.freezeTime(scene)
+						this.completeAnimation()
+					}
+				}
+				break
 			}
 		}
 	}
 
-	static freezeTime(scene) { scene.unbindComponentForAnimation(this.identifier) }
+	static nextWorld() {
+		if (this.currentWorld % 10 == 4) this.currentWorld = this.currentWorld + 7
+		else this.currentWorld = this.currentWorld + 1
+	}
+	
+	static conventRemainingTimeToPoints(scene, complete) {
+		this.animationType = this.animationTypes.REMAININGTIMETOPOINTS
+		this.unfreezeTime(scene)
+		this.completeAnimation = () => {
+			this.animationType = Stat.animationTypes.TICK
+			complete()
+		}
+	}
+
+	static unfreezeTime(scene) {
+		const animationParameters = this.parameters.animation
+		animationParameters.frameIndex = 0
+		this.freezeTime(scene)
+		scene.bindComponent(this, this.identifier)
+		scene.bindComponentForAnimation(this.identifier)
+	}
+
+	static freezeTime(scene) {
+		scene.unbindComponent(this.identifier)
+		scene.unbindComponentForAnimation(this.identifier)
+	}
 }
 
+Stat.animationTypes = {TICK, REMAININGTIMETOPOINTS}
+Stat.animationType = Stat.animationTypes.TICK
 Stat.identifier = 'statclass'
-Stat.parameters = {X1: 60, Y1: 22, X2: 15, Y2: 40, SIZE: 2, animation: {frameIndex: 0, MAXFRAMEINDEX: 24}}
+Stat.parameters = {X1: 60, Y1: 22, X2: 15, Y2: 40, SIZE: 2, animation: {frameIndex: 0, MAXFRAMEINDEX1: 24, MAXFRAMEINDEX2: 2}}
 Stat.parameters.defaults = {score: 0, coins: 0, lives: 3, world: 11, time: 400}
 
 export default Stat.default()

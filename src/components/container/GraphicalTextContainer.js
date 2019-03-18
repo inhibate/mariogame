@@ -1,10 +1,10 @@
 
 import CanvasComponent from '../../canvasComponent'
-import {randomizeNumber, SPACECHAR} from '../../misc'
+import {randomizeNumber, isfunc, SPACECHAR} from '../../misc'
 
-export default class GraphicalTextContainer {
+class GraphicalTextContainer {
 	
-	constructor(text, posx = 0, posy = 0, size = 2, duration = 800, dy = 50, alpha = 1) {
+	constructor(text, posx = 0, posy = 0, size = 2, duration = 800, dy = 50, alpha = 1, unmovable = true) {
 
 		const [componentIdentifier, internalComponentPrefix] = [`container-gtc${randomizeNumber()}`, 'gtc-']
 		const components = {}
@@ -72,7 +72,7 @@ export default class GraphicalTextContainer {
 				instance = new CanvasComponent(W, H, CanvasComponent.SPRITES.GF, iposx, posy, 'sprite', SX, SY, SW, SH, alpha)
 			}
 			instance.collidable = false
-			instance.unmovable = true
+			instance.unmovable = unmovable
 			components[componentIdentifier] = instance
 			iposx = iposx + W
 		}
@@ -88,14 +88,15 @@ export default class GraphicalTextContainer {
 	}
 
 	animate(time, scene) {
-
+		if (isfunc(this.customAnimationFunction)) {
+			return this.customAnimationFunction(time, scene, this._components, this.componentIdentifier)
+		}
 		if (!this.animationInitialized) {
 			this.initposy = this.posy
 			this.inittime = time
 			this.animationInitialized = true
 		}
 		const {keys, entries} = Object
-		
 		let [ANIMATIONCOMPLETED, durationIndex] = [false, (time - this.inittime) / this.animationParameters.DURATION]
 		if (durationIndex >= 1) ANIMATIONCOMPLETED = durationIndex = 1
 
@@ -108,4 +109,23 @@ export default class GraphicalTextContainer {
 		}
 	}
 
+	bindCustomAnimationFunction(f) { this.customAnimationFunction = f }
+
+	makeBindable() {
+		this.bindable = true
+		return this
+	}
 }
+
+const bindGraphicalTextContainer = (customAnimationFunction, scene, text, posx, posy, size, duration, dy, alpha, unmovable) => {
+	const container = new GraphicalTextContainer(text, posx, posy, size, duration, dy, alpha, unmovable)
+	if (isfunc(customAnimationFunction)) {
+		container.bindCustomAnimationFunction(customAnimationFunction)
+	}
+	scene.bindComponent(container)
+	scene.bindComponent(container, container.componentIdentifier)
+	scene.bindComponentForAnimation(container.componentIdentifier)
+}
+
+export default GraphicalTextContainer
+export {bindGraphicalTextContainer}

@@ -1,5 +1,6 @@
 
 import {CANVASSCENEW, CANVASSCENEH, EMPTYCHAR, after} from '../misc'
+import {SFX, Music} from '../sound'
 import RAF from '../raf'
 import Keyboard from '../keyboard'
 import Control from '../control'
@@ -7,16 +8,17 @@ import Collision from '../collision'
 
 import CanvasComponent from '../canvasComponent'
 import PlayerBoxComponent from '../components/PlayerBoxComponent'
+import PipeBoxComponent from '../components/PipeBoxComponent'
+import TransparentBoxComponent from '../components/TransparentBoxComponent'
 
 import GraphicalTextContainer from '../components/container/GraphicalTextContainer'
 import L11Container from '../components/container/L11Container'
+import L12Container from '../components/container/L12Container'
 import NPCContainer from '../components/container/NPCContainer'
 
 import Stat from '../stat'
 
-import {SFX, Music} from '../sound'
-
-const [BGIdentifier, playerBoxComponentIdentifier] = ['bg', 'player']
+const [delta, FLOORH, OW, UG, BLACK, WHITE, BGIdentifier, playerBoxComponentIdentifier] = [32, 64, 'overworld', 'underground', '#000', '#fff', 'bg', 'player']
 
 class Display {
 
@@ -30,13 +32,101 @@ class Display {
 		while (0 < componentsForAnimation.length) scene.unbindComponentForAnimation(componentsForAnimation[0])
 	}
 	
+	static _initBGM(backgroundMusic, I6) {
+		Music.initBackgroundMusic(backgroundMusic)
+		if (I6) return Music.playBackgroundMusic()
+		if (Stat.currentTime > 100) {
+			Music.playBackgroundMusic()
+		}
+		else Music.playBackgroundMusicAccelerated()
+	}
+
+	static _render(scene, components, playerBoxComponent, fpsColor) {
+		RAF.launch(passedTime => {
+			Collision.updateLastPXPYWHMap(components)
+			scene.animate(passedTime)
+			playerBoxComponent.control(passedTime, components, scene, Control)
+			scene.render(true)
+			scene.fps(fpsColor)
+		})
+	}
+	
+	static _renderLocation(scene, container, backgroundMusic, fpsColor = BLACK, directionDown, pipeComponentIdentifier, playerPlacement = [], time = 400) {
+		this.clear(scene)
+		const isQBC = componentIdentifier => /^(qbc)/i.test(componentIdentifier)
+		const isCBC = componentIdentifier => /^(cbc)/i.test(componentIdentifier)
+		const isPlatformContainerComponent = componentIdentifier => /^(container\-platform\-(\d+))$/.test(componentIdentifier)
+		const LocationContainer = container
+		const {NPCComponents, NCCComponents} = new LocationContainer()
+		let playerBoxComponent = undefined
+		scene.bindComponent({_components: NCCComponents})
+		const NPCC = new NPCContainer(NPCComponents)
+		scene.bindComponent(NPCC)
+		scene.bindComponent(NPCC, NPCC.componentIdentifier)
+		scene.bindComponentForAnimation(NPCC.componentIdentifier)
+		const components = scene.getAllBindings()
+		components.filter(component => isPlatformContainerComponent(component.componentIdentifier) || isQBC(component.componentIdentifier) || isCBC(component.componentIdentifier)).forEach(component => scene.bindComponentForAnimation(component.componentIdentifier))
+		if (pipeComponentIdentifier) {
+			const [pipe, additionalDx] = [scene.getBindedComponent(pipeComponentIdentifier), 100]
+			const dx = -pipe.posx + additionalDx
+			scene.move(dx)
+			Stat.display(scene, 0, 0, 0)
+			scene.bindComponent(playerBoxComponent = new PlayerBoxComponent(0, 0), playerBoxComponentIdentifier)
+			playerBoxComponent.moveFromPipe(scene, pipe, () => {
+				Control.init()
+				Stat.time(scene, Stat.currentTime, true)
+			})
+		}
+		else {
+			if (directionDown) Control.DIRECTIONDOWN = true
+			playerBoxComponent = new PlayerBoxComponent(playerPlacement[0], playerPlacement[1])
+			scene.bindComponent(playerBoxComponent, playerBoxComponentIdentifier)
+			Control.init()
+			Stat.currentTime = time
+			Stat.display(scene, 0, 1, 0)
+		}
+		this._initBGM(backgroundMusic)
+		this._render(scene, components, playerBoxComponent, fpsColor)
+	}
+
+	static _renderBonusLocation(scene, container, location, backgroundMusic, fpsColor = WHITE, directionDown, pipeComponentIdentifier, playerPlacement = []) {
+		this.clear(scene)
+		const isQBC = componentIdentifier => /^(qbc)/i.test(componentIdentifier)
+		const isCBC = componentIdentifier => /^(cbc)/i.test(componentIdentifier)
+		const isPlatformContainerComponent = componentIdentifier => /^(container\-platform\-(\d+))$/.test(componentIdentifier)
+		const LocationContainer = container
+		const locationContainerInstance = new LocationContainer()
+		const locationContainerProperty = `B${location}Components`
+		const BComponents = locationContainerInstance[locationContainerProperty]
+		scene.bindComponent({_components: BComponents})
+		const components = scene.getAllBindings()
+		components.filter(component => isPlatformContainerComponent(component.componentIdentifier) || isQBC(component.componentIdentifier) || isCBC(component.componentIdentifier)).forEach(component => scene.bindComponentForAnimation(component.componentIdentifier))
+		let playerBoxComponent = undefined
+		if (pipeComponentIdentifier) {
+			const [pipe, additionalDx] = [scene.getBindedComponent(pipeComponentIdentifier), 100]
+			const dx = -pipe.posx + additionalDx
+			scene.move(dx)
+			Stat.display(scene, 0, 0, 0)
+			scene.bindComponent(playerBoxComponent = new PlayerBoxComponent(0, 0), playerBoxComponentIdentifier)
+			playerBoxComponent.moveFromPipe(scene, pipe, () => {
+				Control.init()
+				Stat.time(scene, Stat.currentTime, true)
+			})
+		}
+		else {
+			if (directionDown) Control.DIRECTIONDOWN = true
+			playerBoxComponent = new PlayerBoxComponent(playerPlacement[0], playerPlacement[1])
+			scene.bindComponent(playerBoxComponent, playerBoxComponentIdentifier)
+			Control.init()
+			Stat.display(scene, 0, 1, 0)
+		}
+		this._initBGM(backgroundMusic)
+		this._render(scene, components, playerBoxComponent, fpsColor)
+	}
+
 	static I0(scene) {
-
-		const [TX1, TXS, ESImageIdentifier] = ['\u00A9 2018 PROGRAMMED BY NEUMANN IVAN', 1.75, 'es']
-		const [DURATION, DELAY, GTCRE, U] = [250, 1500, /^gtc\-/]
-
+		const [TX1, TXS, ESImageIdentifier, DURATION, DELAY, GTCRE, U] = ['\u00A9 2018 PROGRAMMED BY NEUMANN IVAN', 1.75, 'es', 250, 1500, /^gtc\-/, undefined]
 		let [inittime, animationStage1, animationStage2, animationStage3, animationStage4, animationStage5, animationStage6, animationStage7, animationStage8, animationStage9, animationStage10] = []
-		
 		const durationIndex = (time, duration, index) => {
 			if (!inittime) inittime = time
 			if ((index = (time - inittime) / duration) >= 1) {
@@ -45,12 +135,10 @@ class Display {
 			}
 			return index
 		}
-		
-		scene.bindComponent(new CanvasComponent(CANVASSCENEW, CANVASSCENEH, '#000', 0, 0), BGIdentifier)
+		scene.bindComponent(new CanvasComponent(CANVASSCENEW, CANVASSCENEH, BLACK, 0, 0), BGIdentifier)
 		scene.bindComponent(new CanvasComponent(128, 128, CanvasComponent.SPRITES.ES, (CANVASSCENEW - 128) / 2, (CANVASSCENEH - 128) / 2, 'image', U, U, U, U, 0), ESImageIdentifier)
 		scene.bindComponent(new GraphicalTextContainer(TX1, (CANVASSCENEW - 7 * TXS * TX1.length) / 2, (CANVASSCENEH - 7 * TXS) / 2, TXS, U, U, 0))
 		scene.render(true)
-
 		RAF.launch(time => {
 			let DURATIONINDEX;
 			if (!animationStage1) {
@@ -110,14 +198,16 @@ class Display {
 		})
 	}
 	
-	static I1(scene) {
-		const world = world => after(3e3, () => this[world](scene))
+	static I1(scene, isTransition = true) {
+		const W = Stat.currentWorld
+		const world = world => after(3e3, () => {
+			if (isTransition && (W == 12 || W == 22 || W == 42 || W == 72)) this.I6(scene)
+			else this[world](scene)
+		})
 		this.clear(scene)
-		
 		Stat.display(scene, 1, 0, 1)
 		scene.render(true)
-		
-		switch (Stat.currentWorld) {
+		switch (W) {
 			case 11: world('L11'); break
 			case 12: world('L12'); break
 			case 13: world('L13'); break
@@ -175,7 +265,7 @@ class Display {
 		const [TX1, TXS] = [`PRESS ENTER TO ${ tryAgainText ? 'TRY AGAIN' : 'START' }`, 1.75]
 		this.clear(scene)
 		Stat.default()
-		scene.bindComponent(new CanvasComponent(CANVASSCENEW, CANVASSCENEH, '#000', 0, 0), BGIdentifier)
+		scene.bindComponent(new CanvasComponent(CANVASSCENEW, CANVASSCENEH, BLACK, 0, 0), BGIdentifier)
 		scene.bindComponent(new GraphicalTextContainer(TX1, (CANVASSCENEW - 7 * TXS * TX1.length) / 2, (CANVASSCENEH - 7 * TXS) / 2, TXS))
 		scene.render(true)
 		Keyboard.ENTER(() => this.I1(scene))
@@ -184,98 +274,61 @@ class Display {
 	static I5(scene, locationLoadingData) {
 		const [DELAY] = [550]
 		this.clear(scene)
-		scene.bindComponent(new CanvasComponent(CANVASSCENEW, CANVASSCENEH, '#000', 0, 0), BGIdentifier)
+		scene.bindComponent(new CanvasComponent(CANVASSCENEW, CANVASSCENEH, BLACK, 0, 0), BGIdentifier)
 		scene.render(true)
 		after(DELAY, () => {
-			if (/^B/i.test(locationLoadingData[1])) {
-				const bonusLevelMethod = `${locationLoadingData[0]}${locationLoadingData[1]}`
-				this[bonusLevelMethod](scene)
+			if (locationLoadingData.length == 1) {
+				this[locationLoadingData[0]](scene, undefined)
 			}
-			else if (/^pbc/i.test(locationLoadingData[1])) {
-				this[locationLoadingData[0]](scene, locationLoadingData[1])
+			else if (locationLoadingData.length == 2) {
+				if (/^B/i.test(locationLoadingData[1])) {
+					const bonusLevelMethod = `${locationLoadingData[0]}${locationLoadingData[1]}`
+					this[bonusLevelMethod](scene)
+				}
+				else if (/^pbc/i.test(locationLoadingData[1])) {
+					this[locationLoadingData[0]](scene, locationLoadingData[1])
+				}
 			}
 		})
 	}
 
-	static L11(scene, componentIdentifier) {
+	static I6(scene) {
+		const [W, U, PLAYBACKDURATION] = [Stat.currentWorld, undefined, 2300]
 		this.clear(scene)
-		const isQBC = componentIdentifier => /^(qbc)/i.test(componentIdentifier)
-		const [delta, FLOORH] = [32, 64]
-		const {NPCComponents, NCCComponents} = new L11Container()
-		let playerBoxComponent;
-
-		scene.bindComponent({_components: NCCComponents})
-
-		const NPCC = new NPCContainer(NPCComponents)
-		scene.bindComponent(NPCC)
-		scene.bindComponent(NPCC, NPCC.componentIdentifier)
-		scene.bindComponentForAnimation(NPCC.componentIdentifier)
-
-		const components = scene.getAllBindings()
-		components.filter(component => isQBC(component.componentIdentifier)).forEach(component => scene.bindComponentForAnimation(component.componentIdentifier))
-		
-		if (componentIdentifier) {
-			const [pipe, additionalDx] = [scene.getBindedComponent(componentIdentifier), 100]
-			const dx = -pipe.posx + additionalDx
-			scene.move(dx)
-			Stat.display(scene, 0, 0, 0)
-			scene.bindComponent(playerBoxComponent = new PlayerBoxComponent(0, 0), playerBoxComponentIdentifier)
-			playerBoxComponent.moveFromPipe(scene, pipe, () => {
-				Control.init()
-				Stat.time(scene, Stat.currentTime, true)
-			})
-		}
-		else {
-			playerBoxComponent = new PlayerBoxComponent(120, CANVASSCENEH - FLOORH - delta)
-			scene.bindComponent(playerBoxComponent, playerBoxComponentIdentifier)
-			Control.init()
-			Stat.display(scene, 0, 1, 0)
-		}
-
-		Music.initBackgroundMusic('overworld')
-		if (Stat.currentTime > 100) Music.playBackgroundMusic()
-		else Music.playBackgroundMusicAccelerated()
-
-		RAF.launch(passedTime => {
-			Collision.updateLastPXPYWHMap(components)
-			scene.animate(passedTime)
-			playerBoxComponent.control(passedTime, components, scene, Control)
-			scene.render(true)
-			scene.fps()
-		})
-	}
-
-	static L12(scene) {}
-
-	static L11B1(scene) {
-		this.clear(scene)
-		const isQBC = componentIdentifier => /^(qbc)/i.test(componentIdentifier)
-		const isCBC = componentIdentifier => /^(cbc)/i.test(componentIdentifier)
-		const [delta, FLOORH] = [32, 64]
-		const playerBoxComponent = new PlayerBoxComponent(delta * 2, delta * 2)
-		const {B1Components} = new L11Container()
-
-		scene.bindComponent({_components: B1Components})
+		scene.bindComponent(new CanvasComponent(CANVASSCENEW, CANVASSCENEH, CanvasComponent.SPRITES.TRANSITION, 0, 0, 'image', U, U, U, U, 1), BGIdentifier)
+		Stat.display(scene, 0, 0, 0)
+		const [pipeBoxComponentIdentifier1, pipeBoxComponentIdentifier2, floorBoxComponentIdentifier] = ['pbc1p1', 'pbc1p2', 'fbc1']
+		scene.bindComponent(new PipeBoxComponent(delta * 10, CANVASSCENEH - FLOORH * 2, [4, 1], true, [`L${W}`]), pipeBoxComponentIdentifier1)
+		scene.bindComponent(new CanvasComponent((220 - 188) * 2, (417 - 385) * 2, CanvasComponent.SPRITES.PSTF, delta * 12, (CANVASSCENEH - FLOORH * 2) - (417 - 385) * 2, 'sprite', 188, 385, 220 - 188, 417 - 385, 1), pipeBoxComponentIdentifier2)
+		scene.bindComponent(new TransparentBoxComponent(0, CANVASSCENEH - FLOORH, delta * 23, FLOORH), floorBoxComponentIdentifier)
+		Control.DIRECTIONRIGHT = true
+		const playerBoxComponent = new PlayerBoxComponent(0, 0)
+		const {WALKING} = playerBoxComponent.movement.modes
+		playerBoxComponent.movement.mode = WALKING
+		playerBoxComponent.posx = delta * 2
+		playerBoxComponent.posy = CANVASSCENEH - FLOORH - playerBoxComponent.height
 		scene.bindComponent(playerBoxComponent, playerBoxComponentIdentifier)
 		const components = scene.getAllBindings()
-		components.filter(component => isQBC(component.componentIdentifier) || isCBC(component.componentIdentifier)).forEach(component => scene.bindComponentForAnimation(component.componentIdentifier))
+		after(PLAYBACKDURATION, () => {Music.stopBackgroundMusic()})
+		this._initBGM(OW, true)
+		this._render(scene, components, playerBoxComponent, BLACK)
+	}
 
-		Control.init()
+	static L11(scene, pipeComponentIdentifier) {
+		this._renderLocation(scene, L11Container, OW, BLACK, false, pipeComponentIdentifier, [delta * 4, CANVASSCENEH - FLOORH - delta], 400)
+	}
 
-		Music.initBackgroundMusic('underground')
-		if (Stat.currentTime > 100) Music.playBackgroundMusic()
-		else Music.playBackgroundMusicAccelerated()
-		
-		Stat.display(scene, 0, 1, 0)
-		Control.DIRECTIONDOWN = true
-		
-		RAF.launch(passedTime => {
-			Collision.updateLastPXPYWHMap(components)
-			scene.animate(passedTime)
-			playerBoxComponent.control(passedTime, components, scene, Control)
-			scene.render(true)
-			scene.fps('#fff')
-		})
+	static L12(scene, pipeComponentIdentifier) {
+		this._renderLocation(scene, L12Container, UG, WHITE, !!pipeComponentIdentifier ? false : true, pipeComponentIdentifier, [delta * 2, delta * 2], 400)
+	}
+
+	static L13(scene, pipeComponentIdentifier) {}
+
+	static L11B1(scene) { this._renderBonusLocation(scene, L11Container, 1, UG, WHITE, true, undefined, [delta * 2, delta * 2]) }
+	static L12B1(scene) { this._renderBonusLocation(scene, L12Container, 1, UG, WHITE, true, undefined, [delta * 7, delta * 2]) }
+	
+	static L12B2(scene, pipeComponentIdentifier) {
+		this._renderBonusLocation(scene, L12Container, 2, OW, BLACK, false, pipeComponentIdentifier)
 	}
 }
 

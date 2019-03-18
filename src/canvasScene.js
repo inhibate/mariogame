@@ -1,5 +1,5 @@
 
-import {datenow, abs, CANVASSCENEW} from './misc'
+import {datenow, abs, CANVASSCENEW, SPACECHAR} from './misc'
 
 export default class CanvasScene {
 
@@ -15,7 +15,7 @@ export default class CanvasScene {
 		this._context = this._canvas.getContext('2d')
 		this._canvas.width = w
 		this._canvas.height = h		
-		this._fps = { freq: 60, freqIndex: 0, color: '#000', font: 'bold 12px Arial' }
+		this._fps = { freq: 60, freqIndex: 0, color: '#000', font: 'bold 11px Arial' }
 
 		this.scene = { context: this._context }
 
@@ -30,7 +30,7 @@ export default class CanvasScene {
 	}
 
 	fps(color) {
-		const [fps, context] = [this._fps, this._context]
+		const [fps, context, fpsText] = [this._fps, this._context, `Frames Per Second:${SPACECHAR}`]
 		if (!fps.fps) this._computeFPS(2)
 		if ((++fps.freqIndex % fps.freq) == 0) {
 			fps.freqIndex = 0
@@ -38,7 +38,7 @@ export default class CanvasScene {
 		}
 		context.font = fps.font
 		context.fillStyle = color || fps.color
-		context.fillText(`FPS ${fps.fps}`, 10, 20)
+		context.fillText(`${fpsText}${fps.fps}`, 10, 20)
 		fps.dp = datenow()
 	}
 
@@ -83,19 +83,28 @@ export default class CanvasScene {
 
 	bindComponent(component, componentIdentifier) {
 		const playerComponentIdentifier = 'player'
+		const bindComponent = (component, componentIdentifier) => {
+			component.componentIdentifier = componentIdentifier
+			this._components[this._components.length] = { componentIdentifier, component }
+		}
+		const isContainter = component => '_components' in component
+		const shouldBindContainerItself = container => container.bindable == true
 		if (!componentIdentifier) {
 			const components = component._components
 			const componentIdentifiers = Object.keys(components)
 			for (let i = 0; i < componentIdentifiers.length; ++i) {
 				let [componentIdentifier, component] = [componentIdentifiers[i], components[componentIdentifiers[i]]]
-				component.componentIdentifier = componentIdentifier
-				this._components[this._components.length] = { componentIdentifier, component }
+				if (isContainter(component)) {
+					if (shouldBindContainerItself(component)) {
+						bindComponent(component, componentIdentifier || component.componentIdentifier)
+					}
+					this.bindComponent(component)
+				}
+				else bindComponent(component, componentIdentifier)
 			}
 		}
-		else {
-			component.componentIdentifier = componentIdentifier
-			this._components[this._components.length] = { componentIdentifier, component }
-		}
+		else bindComponent(component, componentIdentifier)
+			
 		const componentLast = this._components[this._components.length - 1]
 		if (componentLast.componentIdentifier != playerComponentIdentifier) {
 			for (let i = 0; i < this._components.length; ++i) {
@@ -154,12 +163,20 @@ export default class CanvasScene {
 	}
 
 	animate(time) {
+		let componentsForAnimationCopy = []
+		// Copying is important here because we may remove left-elements affecting index
 		for (let i = 0, componentsForAnimation = this._componentsForAnimation; i < componentsForAnimation.length; ++i) {
-			let [component, unbind] = [this.getBindedComponent(componentsForAnimation[i]), false]
-			if (typeof component.animate == 'function') {
-				unbind = component.animate(time, this)
+			componentsForAnimationCopy[componentsForAnimationCopy.length] = componentsForAnimation[i]
+		}
+		for (let i = 0; i < componentsForAnimationCopy.length; ++i) {
+			let [component, unbind] = [this.getBindedComponent(componentsForAnimationCopy[i]), false]
+			// This check is important: we may remove elements from scene or/and from _componentsForAnimation when component.animate() call
+			if (component && this._componentsForAnimation.includes(componentsForAnimationCopy[i])) {
+				if (typeof component.animate == 'function') {
+					unbind = component.animate(time, this)
+				}
+				if (unbind) this.unbindComponentForAnimation(componentsForAnimationCopy[i])
 			}
-			if (unbind) this.unbindComponentForAnimation(componentsForAnimation[i--])
 		}
 	}
 

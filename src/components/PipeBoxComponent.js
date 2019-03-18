@@ -39,6 +39,9 @@ export default class PipeBoxComponent extends CanvasComponent {
 			else if (type[0] == 3) {
 				initWHSXSYSWSH(230, 385, 262, 450)
 			}
+			else if (type[0] == 4) {
+				initWHSXSYSWSH(156, 417, 218, 449)
+			}
 			else if (type[0] == 5) {
 				initWHSXSYSWSH(84, 417, 146, 449)
 			}

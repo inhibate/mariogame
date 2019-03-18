@@ -15,22 +15,10 @@ SFX.warning = createHInstance(['../audio/sfx/Warning.wav'])
 SFX.die = createHInstance(['../audio/sfx/Die.mp3'])
 SFX.warp = createHInstance(['../audio/sfx/Warp.wav'])
 SFX.gameover = createHInstance(['../audio/sfx/GameOver.mp3'])
-
-SFX.up1 = createHInstance(['../audio/sfx/1up.wav'])
-SFX.bigjump = createHInstance(['../audio/sfx/BigJump.wav'])
-SFX.bowserdie = createHInstance(['../audio/sfx/BowserDie.wav'])
-SFX.enemyfire = createHInstance(['../audio/sfx/EnemyFire.wav'])
-SFX.fireball = createHInstance(['../audio/sfx/FireBall.wav'])
-SFX.flagpole = createHInstance(['../audio/sfx/Flagpole.wav'])
-SFX.kick = createHInstance(['../audio/sfx/Kick.wav'])
-SFX.powerup = createHInstance(['../audio/sfx/Powerup.wav'])
-SFX.skid = createHInstance(['../audio/sfx/Skid.wav'])
-SFX.thwomp = createHInstance(['../audio/sfx/Thwomp.wav'])
-SFX.vine = createHInstance(['../audio/sfx/Vine.wav'])
-//delete?
-SFX.beep = createHInstance(['../audio/sfx/Beep.wav'])
-SFX.pause = createHInstance(['../audio/sfx/Pause.wav'])
-SFX.item = createHInstance(['../audio/sfx/Item.wav'])
+SFX.flagpole = createHInstance(['../audio/sfx/Flagpole.mp3'])
+SFX.firework = createHInstance(['../audio/sfx/Firework.wav'])
+SFX.areaclear = createHInstance(['../audio/sfx/AreaClear.mp3'])
+SFX.remainingTimeToPoints = createHInstance(['../audio/sfx/RemainingTimeToPoints.mp3'], {loop: true, volume: 0.19})
 
 class Music {
 	static init(complete) {
@@ -68,6 +56,7 @@ class Music {
 				SFX.warning.off('end')
 			}
 			if (SFX.jump.playing()) SFX.jump.stop()
+			if (SFX.warp.playing()) SFX.warp.stop()
 			this.backgroundMusic.stop()
 			this.backgroundMusicAccelerated.stop()
 		}
