@@ -8,4 +8,4 @@ Mario Bros (SMB) game that I programmed (or still programming) for browser using
 ### How to play?
 
 
-### © 2018-2019 [Ivan N](https://vk.com/ivan_berger2). Released under the MIT License
+### © 2018-2019 [Ivan N](https://vk.com/naumov_ivan2). Released under the MIT License
