@@ -1,11 +1,12 @@
 
-import {delay, after, isfunc, CANVASSCENEW, CANVASSCENEH, precision} from '../misc/'
+import {delay, after, isfunc, CANVASSCENEW, CANVASSCENEH, precision, randomizeNumber} from '../misc/'
 import CanvasComponent from '../canvasComponent'
 import Collision from '../collision'
 import Control from '../control'
 import {SFX, Music} from '../sound'
 import {bindGraphicalTextContainer} from './container/GraphicalTextContainer'
 import ControlPointComponent from './ControlPointComponent'
+import CoinBonusComponent from './bonus/CoinBonusComponent'
 
 import Display from '../display'
 import Stat from '../stat'
@@ -21,7 +22,7 @@ export default class PlayerBoxComponent extends CanvasComponent {
 		const SDIE = [13, 46, 27 - 13, 60 - 46]
 		const [DX, DY, HEIGHT, HEIGHTADDITIONAL, DURATION, DURATIONADDITIONAL] = [5.5, 6.5, 64, 100, 150, 100]
 		const [W, H, SPRITE, SX, SY, SW, SH] = [32, 32, CanvasComponent.SPRITES.CHARACTERS, STANDING[1][0], STANDING[1][1], STANDING[1][2], STANDING[1][3]]
-		const [SADURATION, SADY, FLAGPOLEDY] = [110, 4.5, 4]
+		const [SADURATION, SADY, FLAGPOLEDY] = [130, 6, 4]
 		const [IPENETRATE, LPENETRATE, DIE, FROMPIPE, ALONGFLAGPOLESTICK, MOVECASTLE] = [0, 1, 2, 3, 4, 5]
 		const [WALKING, SLUGGISHRUNNING, RUNNING] = [0, 1, 2]
 		
@@ -385,12 +386,53 @@ export default class PlayerBoxComponent extends CanvasComponent {
 					delay.clear(di1, this)
 					delete this.collidedNPC
 				}
+				let hittedComponents = []
 				for (let i = 0; i < collisions.collisions.length; i++) {
 					const collision = collisions.collisions[i]
 					if (collision.collisionType == collisions.BTYPE) {
 						const component = scene.getBindedComponent(collision.componentIdentifier)
 						const componentHitMethodSupport = isfunc(component.hit)
-						if (componentHitMethodSupport) component.hit(scene)
+						if (componentHitMethodSupport) hittedComponents[hittedComponents.length] = component
+					}
+				}
+				if (hittedComponents.length > 0) {
+					let [hittedComponentLowestDx, hittedComponentLowestDxIndex] = []
+					for (let i = 0; i < hittedComponents.length; i++) {
+						const hittedComponent = hittedComponents[i]
+						let dx = Math.abs((this.posx + this.width / 2) - (hittedComponent.posx + hittedComponent.width / 2))
+						if (i == 0) {
+							hittedComponentLowestDx = dx
+							hittedComponentLowestDxIndex = 0
+						}
+						if (hittedComponentLowestDx > dx) {
+							hittedComponentLowestDx = dx
+							hittedComponentLowestDxIndex = i 
+						}
+						if (i == hittedComponents.length - 1) {
+							const component = hittedComponents[hittedComponentLowestDxIndex]
+							console.log(component.componentIdentifier)
+							component.hit(scene)
+							if (component.coinBoxIdentifier != undefined) {
+								if (scene.getBindedComponent(component.coinBoxIdentifier) != undefined) {
+									const [coinBonusComponent, coinBonusComponentIdentifier] = [new CoinBonusComponent, `cbc${randomizeNumber()}`]
+									scene.unbindComponentForAnimation(component.coinBoxIdentifier)
+									scene.unbindComponent(component.coinBoxIdentifier)
+									coinBonusComponent.init(component.posx, component.posy, component.width, component.height)
+									scene.bindComponent(coinBonusComponent, coinBonusComponentIdentifier)
+									scene.bindComponentForAnimation(coinBonusComponentIdentifier)
+								}
+							}
+							if (!component.solid) {
+								const [collisions, NPCPREFIXRE] = [Collision.detect(scene.getAllBindings(), component).collisions, /^npc\-/]
+								for (let i = 0; i < collisions.length; i++) {
+									const componentIdentifier = collisions[i].componentIdentifier
+									const component = scene.getBindedComponent(componentIdentifier)
+									const [isNPC, isBonusNPC] = [NPCPREFIXRE.test(componentIdentifier), component.bonusComponent == true]
+									if (isNPC) component.hit()
+									else if (isBonusNPC) component.bump()
+								}
+							}
+						}
 					}
 				}
 				return false
@@ -424,27 +466,19 @@ export default class PlayerBoxComponent extends CanvasComponent {
 			return collidesNPC
 		}
 		const processCollisionWithBonus = () => {
-			const [CBCPREFIXRE] = [/^(cbc)/]
-			const CBCcollisions = collisions.collisions.filter(collision => CBCPREFIXRE.test(collision.componentIdentifier))
+			const BONUSPREFIXESRE = /^(cbc|mushroom\-)/
+			const bonusCollisionIdentifiers = collisions.collisions.filter(collision => BONUSPREFIXESRE.test(collision.componentIdentifier)).map(collision => collision.componentIdentifier)
 			let collidesBonus = false
-			if (0 < CBCcollisions.length) {
+			if (0 < bonusCollisionIdentifiers.length) {
 				collidesBonus = true
-				CBCcollisions.forEach(collision => {
-					if (SFX.coin.playing()) SFX.coin.stop()
-					const [coinsAmount, scoreValue] = [1, 200]
-					scene.unbindComponent(collision.componentIdentifier)
-					scene.unbindComponentForAnimation(collision.componentIdentifier)
-					Stat.coins(scene, coinsAmount)
-					Stat.score(scene, scoreValue)
-					SFX.coin.play()
-				})
+				this.collideBonus(scene, bonusCollisionIdentifiers)
 			}
 			return collidesBonus
 		}
 		const processCollisionWithFlagpoleStick = () => {
 			const [FLAGPOLESTICKRE, FLAGPOLESTICKIDENTIFIER, FLAGPOLEFLAGIDENTIFIER] = [/^flagpole\-stick$/, 'flagpole-stick', 'flagpole-flag']
 			const collidesFlagpoleStick = 0 < collisions.collisions.filter(collision => FLAGPOLESTICKRE.test(collision.componentIdentifier)).length
-			if (collidesFlagpoleStick) {
+			if (collidesFlagpoleStick && !this.flagpoleStickAnimationCompleted) {
 				this.achieveFlagpole(scene, scene.getBindedComponent(FLAGPOLESTICKIDENTIFIER), scene.getBindedComponent(FLAGPOLEFLAGIDENTIFIER))
 			}
 			return collidesFlagpoleStick
@@ -516,6 +550,22 @@ export default class PlayerBoxComponent extends CanvasComponent {
 		const collidesPlatform = processCollisionWithPlatform()
 		if (collidesPlatform) return false
 	}
+	
+	collideBonus(scene, bonusIdentifiers) {
+		const [pointsPerCoin] = [200]
+		bonusIdentifiers.forEach(identifier => {
+			const [COINPREFIX, MUSHROOMPREFIX] = [/^(cbc)/, /^(mushroom\-)/]
+			if (COINPREFIX.test(identifier)) {
+				if (SFX.coin.playing()) SFX.coin.stop()
+				scene.unbindComponent(identifier)
+				scene.unbindComponentForAnimation(identifier)
+				Stat.coins(scene, 1)
+				Stat.score(scene, pointsPerCoin)
+				SFX.coin.play()
+			}
+			else if (MUSHROOMPREFIX.test(identifier)) { scene.getBindedComponent(identifier).take() }
+		})
+	}
 
 	collideNPC(scene, score) {
 		this.collidedNPC = true
@@ -578,7 +628,7 @@ export default class PlayerBoxComponent extends CanvasComponent {
 				break
 			}
 			case LPENETRATE: {
-				const [DX, FRI, PIPEPOSX, DELAY] = [this.movement.DX / 7, 5, this.pipe.posx + 10, 2500]
+				const [DX, FRI, PIPEPOSX, DELAY] = [this.movement.DX / 7, 5, this.pipe.posx + 10, 550]
 				this.posx = this.posx + DX
 				this.specifyFrameRunning(FRI, this.direction)
 
@@ -734,7 +784,7 @@ export default class PlayerBoxComponent extends CanvasComponent {
 			}
 			const acceptableBoundaries = (pipe, pipeType, player, dx = 3) => {
 				const p8 = number => precision(number, 8)
-				if (pipeType == IPIPETYPE) return p8(player.posx) > p8(pipe.posx + dx) && p8(player.posx + player.width) < p8(pipe.posx + pipe.width - dx) && p8(player.posy) < p8(pipe.posy)
+				if (pipeType == IPIPETYPE) return p8(player.posx) > p8(pipe.posx + dx) && p8(player.posx + player.width) < p8(pipe.posx + pipe.width - dx) && p8(player.posy + player.height) >= p8(pipe.posy)
 				if (pipeType == LPIPETYPE) return p8(player.posx + player.width) >= p8(pipe.posx) && p8(player.posx) < p8(pipe.posx + pipe.width) && p8(player.posy) >= p8(pipe.posy) && p8(player.posy) < p8(pipe.posy + pipe.height)
 			}
 			for (let i = 0; i < this._pipes.length; i++) {
@@ -744,6 +794,7 @@ export default class PlayerBoxComponent extends CanvasComponent {
 					return penetrate(pipe, this.animationTypes.LPENETRATE)
 				}
 				else if (DOWNPRESSED && IPIPE && acceptableBoundaries(pipe, IPIPETYPE, this)) {
+					console.log(true)
 					return penetrate(pipe, this.animationTypes.IPENETRATE)
 				}
 			}
@@ -777,6 +828,7 @@ export default class PlayerBoxComponent extends CanvasComponent {
 		Control.clear()
 		this._completeAnimation = () => {
 			this.movingAlongFlagpoleStick = false
+			this.flagpoleStickAnimationCompleted = true
 			const {SLUGGISHRUNNING} = this.movement.modes
 			this.movement.mode = SLUGGISHRUNNING
 			SFX.areaclear.play()

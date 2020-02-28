@@ -8,12 +8,15 @@ import BBC from '../BrickBoxComponent'
 import PBC from '../PipeBoxComponent'
 import TBC from '../TransparentBoxComponent'
 import CBC from '../CoinBoxComponent'
+import IBC from '../InvisibleBoxComponent'
 import FlagpoleBoxComponent from '../FlagpoleBoxComponent'
 import CoinBonusComponent from '../bonus/CoinBonusComponent'
 import ControlPointComponent from '../ControlPointComponent'
 import CastleBoxComponent from '../CastleBoxComponent'
+import MushroomBonusComponent from '../bonus/MushroomBonusComponent'
 
 import NPCGoomba from '../npc/NPCGoomba'
+import NPCKoopaTroopa from '../npc/NPCKoopaTroopa'
 
 export default class L11Container {
 	constructor() {
@@ -21,7 +24,29 @@ export default class L11Container {
 		const [FEx, FEy, FLOORH, delta] = [512, 288, 64, 32]
 
 		this.NPCComponents = {
-			'npc-goomba1': new NPCGoomba(120 + delta * 10, CANVASSCENEH - FLOORH - delta - 256, 1)
+			'npc-goomba1': new NPCGoomba(delta * 22, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba2': new NPCGoomba(delta * 40, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba3': new NPCGoomba(delta * 51, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba4': new NPCGoomba(delta * 52 + delta / 2, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba5': new NPCGoomba(delta * 97, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba6': new NPCGoomba(delta * 98 + delta / 2, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba7': new NPCGoomba(delta * 80, delta * 4, 2),
+			'npc-goomba8': new NPCGoomba(delta * 82, delta * 4, 2),
+			'npc-koopatroopa1': new NPCKoopaTroopa(delta * 107, CANVASSCENEH - FLOORH - 48, 1, 0),
+			'npc-goomba9': new NPCGoomba(delta * 114, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba10': new NPCGoomba(delta * 115 + delta / 2, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba11': new NPCGoomba(delta * 124, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba12': new NPCGoomba(delta * 125 + delta / 2, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba13': new NPCGoomba(delta * 128, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba14': new NPCGoomba(delta * 129 + delta / 2, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba15': new NPCGoomba(delta * 174, CANVASSCENEH - FLOORH - delta, 2),
+			'npc-goomba16': new NPCGoomba(delta * 175 + delta / 2, CANVASSCENEH - FLOORH - delta, 2)
+			
+			// 21 - mushroom in box
+			// 64 - mushroom in invisible box
+			// 78 - mushroom in box
+			// 100 - star in box
+			// 109 - mushroom in box 
 		}
 
 		this.B1Components = {
@@ -95,10 +120,10 @@ export default class L11Container {
 			'fbc2': new TBC(delta * 71, CANVASSCENEH - FLOORH, delta * 15, FLOORH),
 			'fbc3': new TBC(delta * (71 + 15 + 3), CANVASSCENEH - FLOORH, delta * 64, FLOORH),
 			'fbc4': new TBC(delta * (71 + 15 + 3 + 64 + 2), CANVASSCENEH - FLOORH, delta * 53, FLOORH),
-			'qbc1': new QBC(FEx, FEy).bindBonus(new CoinBonusComponent, 2),
-			'qbc2': new QBC(FEx + delta * 5, FEy),
+			'qbc1': new QBC(FEx, FEy).bindBonus(new CoinBonusComponent, 1),
+			'qbc2': new QBC(FEx + delta * 5, FEy).bindBonus(new MushroomBonusComponent('OW', false, 1), 1, true, true),
 			'qbc3': new QBC(FEx + delta * 6, FEy - delta * 4).bindBonus(new CoinBonusComponent, 1),
-			'qbc4': new QBC(FEx + delta * 7, FEy),
+			'qbc4': new QBC(FEx + delta * 7, FEy).bindBonus(new CoinBonusComponent, 1),
  			'bbc1': new BBC(FEx + delta * 4, FEy),
  			'bbc2': new BBC(FEx + delta * 6, FEy),
  			'bbc3': new BBC(FEx + delta * 8, FEy),
@@ -106,6 +131,7 @@ export default class L11Container {
 			'pbc2': new PBC(FEx + delta * 22, FEy + delta, [2, 1]),
 			'pbc3': new PBC(FEx + delta * 30, FEy, [3, 1]),
 			'pbc4': new PBC(FEx + delta * 41, FEy, [3, 1], true, ['L11', 'B1']),
+			'ibc1': new IBC(FEx + delta * 48, FEy - delta).bindBonus(new MushroomBonusComponent('OW', false, 0), 1, true, true),
  			'bbc4': new BBC(FEx + delta * 61, FEy),
  			'bbc5': new BBC(FEx + delta * 63, FEy),
 			'qbc5': new QBC(FEx + delta * 62, FEy),
@@ -120,14 +146,14 @@ export default class L11Container {
  			'bbc14': new BBC(FEx + delta * 75, FEy - delta * 4),
  			'bbc15': new BBC(FEx + delta * 76, FEy - delta * 4),
  			'bbc16': new BBC(FEx + delta * 77, FEy - delta * 4),
-			'qbc6': new QBC(FEx + delta * 78, FEy - delta * 4),
- 			'bbc17': new BBC(FEx + delta * 78, FEy),
+			'qbc6': new QBC(FEx + delta * 78, FEy - delta * 4).bindBonus(new CoinBonusComponent, 1),
+ 			'bbc17': new BBC(FEx + delta * 78, FEy).bindBonus(new CoinBonusComponent, 6),
  			'bbc18': new BBC(FEx + delta * 84, FEy),
  			'bbc19': new BBC(FEx + delta * 85, FEy),
 			'qbc7': new QBC(FEx + delta * 93, FEy - delta * 4),
-			'qbc8': new QBC(FEx + delta * 93, FEy),
-			'qbc9': new QBC(FEx + delta * 90, FEy),
-			'qbc10': new QBC(FEx + delta * 96, FEy),
+			'qbc8': new QBC(FEx + delta * 93, FEy).bindBonus(new CoinBonusComponent, 1),
+			'qbc9': new QBC(FEx + delta * 90, FEy).bindBonus(new CoinBonusComponent, 1),
+			'qbc10': new QBC(FEx + delta * 96, FEy).bindBonus(new CoinBonusComponent, 1),
  			'bbc20': new BBC(FEx + delta * 102, FEy),
  			'bbc21': new BBC(FEx + delta * 105, FEy - delta * 4),
  			'bbc22': new BBC(FEx + delta * 106, FEy - delta * 4),
@@ -136,8 +162,8 @@ export default class L11Container {
  			'bbc25': new BBC(FEx + delta * 115, FEy - delta * 4),
  			'bbc26': new BBC(FEx + delta * 114, FEy),
  			'bbc27': new BBC(FEx + delta * 113, FEy),
-			'qbc11': new QBC(FEx + delta * 113, FEy - delta * 4),
-			'qbc12': new QBC(FEx + delta * 114, FEy - delta * 4),
+			'qbc11': new QBC(FEx + delta * 113, FEy - delta * 4).bindBonus(new CoinBonusComponent, 1),
+			'qbc12': new QBC(FEx + delta * 114, FEy - delta * 4).bindBonus(new CoinBonusComponent, 1),
 			'ttc1': new TTC(FEx + delta * 121, FEy),
 			'ttc2': new TTC(FEx + delta * 121, FEy + delta * 1),
 			'ttc3': new TTC(FEx + delta * 121, FEy + delta * 2),
@@ -187,7 +213,7 @@ export default class L11Container {
 			'bbc28': new BBC(FEx + delta * 155, FEy),
 			'bbc29': new BBC(FEx + delta * 153, FEy),
 			'bbc30': new BBC(FEx + delta * 152, FEy),
-			'qbc13': new QBC(FEx + delta * 154, FEy),
+			'qbc13': new QBC(FEx + delta * 154, FEy).bindBonus(new CoinBonusComponent, 1),
 			'ttc45': new TTC(FEx + delta * 165, FEy + delta * 3),
 			'ttc46': new TTC(FEx + delta * 166, FEy + delta * 3),
 			'ttc47': new TTC(FEx + delta * 167, FEy + delta * 3), 
@@ -232,7 +258,6 @@ export default class L11Container {
 			'ttc86': new TTC(FEx + delta * 173, FEy - delta * 3),
 			'ttc87': new TTC(FEx + delta * 172, FEy - delta * 4),
 			'ttc88': new TTC(FEx + delta * 173, FEy - delta * 4),
-			'ttc89': new TTC(120 + 64, CANVASSCENEH - FLOORH - delta),
 			'container-flagpole': new FlagpoleBoxComponent(FEx + delta * 181, CANVASSCENEH - FLOORH - delta),
 			'container-castle': new CastleBoxComponent(FEx + delta * 186, CANVASSCENEH - FLOORH - delta * 5, 0),
 			'controlpoint': new ControlPointComponent(FEx + delta * 189, CANVASSCENEH - FLOORH - delta, 1, delta, ControlPointComponent.TYPES.CASTLEENTRY)

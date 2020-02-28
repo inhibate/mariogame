@@ -1,5 +1,6 @@
 
 import CanvasComponent from '../canvasComponent'
+import {randomizeNumber} from '../misc'
 
 export default class BrickBoxComponent extends CanvasComponent {
 
@@ -37,6 +38,14 @@ export default class BrickBoxComponent extends CanvasComponent {
 			this.animationInitialized = true
 			this.inittime = time
 			this.initposy = this.posy
+			if (this.bonusComponent) {
+				if (this.bonusIndex++ < this.bonusAmount) this.initBonusComponent(scene)
+				if (this.bonusIndex == this.bonusAmount) {
+					this.unbindBonus()
+					//this.specifySXSYSWSH(this.sxsyswshIndex = 3)
+				}
+			}
+			//else this.specifySXSYSWSH(this.sxsyswshIndex = 3)
 		}
 
 		const {DURATION, AMPLITUDE} = this.animationParameters
@@ -55,4 +64,33 @@ export default class BrickBoxComponent extends CanvasComponent {
 
 	hit(scene) { scene.bindComponentForAnimation(this.componentIdentifier) }
 
+	bindCoinBoxIdentifier(identifier) { 
+		this.coinBoxIdentifier = identifier
+		return this
+	}
+
+	bindBonus(bonusComponent, bonusAmount) {
+		const bonusComponentIdentifierPrefix = 'cabc'
+		this.bonusComponentIdentifier = `${bonusComponentIdentifierPrefix}${randomizeNumber()}`
+		this.bonusIndex = 0
+		this.bonusAmount = bonusAmount
+		this.bonusComponent = bonusComponent	
+		this.initBonusComponent = scene => {
+			const [component, componentIdentifier] = [this.bonusComponent, this.bonusComponentIdentifier]
+			component.init(this.posx, this.posy, this.width, this.height)
+			if (scene.getBindedComponent(componentIdentifier) !== component) {
+				scene.bindComponent(component, componentIdentifier)
+				scene.bindComponentForAnimation(componentIdentifier)
+			}
+		}
+		return this
+	}
+    
+    unbindBonus() {
+		delete this.bonusComponentIdentifier
+		delete this.bonusIndex
+		delete this.bonusAmount
+		delete this.bonusComponent
+		delete this.initBonusComponent
+	}
 } 

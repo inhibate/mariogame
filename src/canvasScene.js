@@ -81,6 +81,30 @@ export default class CanvasScene {
 		}
 	}
 
+	order(patterns) {
+		const componentIdentifiers = []
+		for (let i = 0; i < patterns.length; ++i) {
+			for (let k = 0; k < this._components.length; ++k) {
+				let componentIdentifier = this._components[k].componentIdentifier
+				if (patterns[i].test(componentIdentifier)) {
+					componentIdentifiers[componentIdentifiers.length] = componentIdentifier
+				}
+			}
+		}
+		for (let i = 0; i < componentIdentifiers.length; ++i) {
+			const componentIdentifier = componentIdentifiers[i]
+			const components = this._components
+			for (let k = 0; k < components.length; ++k) {
+				let component = components[k]
+				if (component.componentIdentifier == componentIdentifier) {
+					components.splice(k, 1)
+					components[components.length] = component
+					break
+				}
+			}
+		}
+	}
+
 	bindComponent(component, componentIdentifier) {
 		const playerComponentIdentifier = 'player'
 		const bindComponent = (component, componentIdentifier) => {
@@ -104,17 +128,8 @@ export default class CanvasScene {
 			}
 		}
 		else bindComponent(component, componentIdentifier)
-			
-		const componentLast = this._components[this._components.length - 1]
-		if (componentLast.componentIdentifier != playerComponentIdentifier) {
-			for (let i = 0; i < this._components.length; ++i) {
-				if (this._components[i].componentIdentifier == playerComponentIdentifier) {
-					this._components[this._components.length - 1] = this._components[i]
-					this._components[i] = componentLast
-					break
- 				}
-			}
-		}
+		// this._components = [..., player, pbc1, pbc2, pbcN, gtcA, gtcB, gtcN]
+		this.order([/^player$/, /^pbc/, /^gtc/])
 	}
 
 	unbindComponent(componentIdentifier) {

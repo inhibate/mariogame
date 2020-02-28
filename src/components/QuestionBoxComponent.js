@@ -2,6 +2,7 @@
 
 import CanvasComponent from '../canvasComponent'
 import {randomizeNumber} from '../misc/'
+import NPCContainer from './container/NPCContainer'
 
 export default class QuestionBoxComponent extends CanvasComponent {
 
@@ -99,6 +100,8 @@ export default class QuestionBoxComponent extends CanvasComponent {
 		}
 
 		else if (this.state == this.states.HIT) {
+
+			const {DURATION, AMPLITUDE} = this.animationParameters
 			
 			if (!this.init) {
 				this.NFRAMESPASSED = undefined
@@ -107,54 +110,33 @@ export default class QuestionBoxComponent extends CanvasComponent {
 				this.init = true
 				this.initposy = this.posy
 				this.inittime = time
-				if (this.bonusComponent) {
-					if (this.bonusIndex++ < this.bonusAmount) this.initBonusComponent(scene)
-					if (this.bonusIndex == this.bonusAmount) {
-						this.unbindBonus()
-						this.specifySXSYSWSH(this.sxsyswshIndex = 3)
-					}
-				}
+				if (this.bonusComponent) { if (this.initBonusAfterAnimation == false) this.initBonus(scene) }
 				else this.specifySXSYSWSH(this.sxsyswshIndex = 3)
 			}
 
-			const {DURATION, AMPLITUDE} = this.animationParameters
 			let durationIndex = (time - this.inittime) / DURATION
-			let ANIMATIONCOMPLETED = false			
+			let ANIMATIONCOMPLETED = false
 			if (durationIndex >= 1) ANIMATIONCOMPLETED = true
 			
 			if (ANIMATIONCOMPLETED) {
 				this.posy = this.initposy
 				this.init = this.inittime = this.initposy = undefined
+				if (this.bonusAmount) if (this.initBonusAfterAnimation == true) this.initBonus(scene)
 				if (this.bonusComponent && this.bonusIndex != this.bonusAmount) this.state = this.states.ANIMATE
-				else return true
+				else {
+					this.specifySXSYSWSH(this.sxsyswshIndex = 4)
+					this.solid = true
+					return true
+				}
 			}
 			else this.posy = this.initposy - AMPLITUDE * Math.sin(Math.PI * durationIndex)
 		}
 	}
 
 	hit(scene) {
+		if (this.solid == true) return false
 		this.state = this.states.HIT
 		scene.bindComponentForAnimation(this.componentIdentifier)
-	}
-
-	bindBonus(bonusComponent, bonusAmount) {
-
-		const bonusComponentIdentifierPrefix = 'cabc'
-		
-		this.bonusComponentIdentifier = `${bonusComponentIdentifierPrefix}${randomizeNumber()}`
-		this.bonusIndex = 0
-		this.bonusAmount = bonusAmount
-		this.bonusComponent = bonusComponent
-		
-		this.initBonusComponent = scene => {
-			const [component, componentIdentifier] = [this.bonusComponent, this.bonusComponentIdentifier]
-			component.init(this.posx, this.posy, this.width, this.height)
-			if (scene.getBindedComponent(componentIdentifier) !== component) {
-				scene.bindComponent(component, componentIdentifier)
-				scene.bindComponentForAnimation(componentIdentifier)
-			}
-		}
-		return this
 	}
 
 	unbindBonus() {
@@ -163,5 +145,40 @@ export default class QuestionBoxComponent extends CanvasComponent {
 		delete this.bonusAmount
 		delete this.bonusComponent
 		delete this.initBonusComponent
+		delete this.initBonusAfterAnimation
+	}
+	
+	initBonus(scene) {
+		if (this.bonusIndex++ < this.bonusAmount) this.initBonusComponent(scene)
+		if (this.bonusIndex == this.bonusAmount) {
+			this.unbindBonus()
+			this.specifySXSYSWSH(this.sxsyswshIndex = 3)
+		}
+	}
+
+	bindBonus(bonusComponent, bonusAmount, initBonusAfterAnimation = false, extendsFromNPCClass = false) {
+		
+		this.bonusComponentIdentifier = bonusComponent.componentIdentifier || `bonus-${randomizeNumber()}`
+		this.bonusIndex = 0
+		this.bonusAmount = bonusAmount
+		this.bonusComponent = bonusComponent
+		this.initBonusAfterAnimation = initBonusAfterAnimation
+		
+		this.initBonusComponent = scene => {
+			const [component, componentIdentifier] = [this.bonusComponent, this.bonusComponentIdentifier]
+			component.init(this.posx, this.posy, this.width, this.height)
+			if (extendsFromNPCClass) {
+				scene.bindComponent(component, componentIdentifier)
+				NPCContainer.instance().pushNPC(component)
+			}
+			else {
+				if (scene.getBindedComponent(componentIdentifier) !== component) {
+					scene.bindComponent(component, componentIdentifier)
+					scene.bindComponentForAnimation(componentIdentifier)
+				}
+			}
+			scene.zindex(componentIdentifier, this.componentIdentifier)
+		}
+		return this
 	}
 } 

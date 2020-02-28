@@ -18,9 +18,9 @@ export default class NPCGoomba extends NPC {
 		const [MAXFRAMEINDEX, DELAY] = [7, 500]
 		const SPRITES = {
 			// [SX, SY, SW, SH, W, H]
-			0: [/*STOMPED*/[163, 195, 16, 8, 16 * 2, 8 * 2], /*ANIMATION*/[182, 187, 16, 16, 16 * 2, 16 * 2], [201, 187, 16, 16, 16 * 2, 16 * 2]],
-			1: [/*STOMPED*/[220, 195, 16, 8, 16 * 2, 8 * 2], /*ANIMATION*/[239, 187, 16, 16, 16 * 2, 16 * 2], [258, 187, 16, 16, 16 * 2, 16 * 2]],
-			2: [/*STOMPED*/[277, 195, 16, 8, 16 * 2, 8 * 2], /*ANIMATION*/[296, 187, 16, 16, 16 * 2, 16 * 2], [315, 187, 16, 16, 16 * 2, 16 * 2]]
+			0: [/*STOMPED*/[163, 195, 16, 8, 16 * 2, 8 * 2], /*WALKING*/[182, 187, 16, 16, 16 * 2, 16 * 2], [201, 187, 16, 16, 16 * 2, 16 * 2], /*HIT*/[136, 424, 16, 16, 16 * 2, 16 * 2]],
+			1: [/*STOMPED*/[220, 195, 16, 8, 16 * 2, 8 * 2], /*WALKING*/[239, 187, 16, 16, 16 * 2, 16 * 2], [258, 187, 16, 16, 16 * 2, 16 * 2], /*HIT*/[114, 424, 16, 16, 16 * 2, 16 * 2]],
+			2: [/*STOMPED*/[277, 195, 16, 8, 16 * 2, 8 * 2], /*WALKING*/[296, 187, 16, 16, 16 * 2, 16 * 2], [315, 187, 16, 16, 16 * 2, 16 * 2], /*HIT*/[156, 424, 16, 16, 16 * 2, 16 * 2]]
 		}
 
 		const SPRITE = SPRITES[pallete]
@@ -35,6 +35,11 @@ export default class NPCGoomba extends NPC {
 		this.sxsyswshIndex = 1
 	}
 
+	specifyWH() {
+		this.width = this.SPRITE[this.sxsyswshIndex][4]
+		this.height = this.SPRITE[this.sxsyswshIndex][5]
+	}
+
 	specifySXSYSWSH() {
 		this.sx = this.SPRITE[this.sxsyswshIndex][0]
 		this.sy = this.SPRITE[this.sxsyswshIndex][1]
@@ -45,9 +50,20 @@ export default class NPCGoomba extends NPC {
 	stomp() {
 		this.state = this.states.STOMPED
 		this.sxsyswshIndex = 0
+		this.dx = 0
 		this.specifySXSYSWSH()
-		this.height = this.SPRITE[this.sxsyswshIndex][5]
+		this.specifyWH()
 		this.posy = this.posy + this.SPRITE[this.sxsyswshIndex][5]
+		this.collidable = false
+	}
+
+	hit() {
+		this.state = this.states.HIT
+		this.sxsyswshIndex = 3
+		this.direction = 1
+		this.dx = 1
+		this.specifySXSYSWSH()
+		this.specifyWH()
 		this.collidable = false
 	}
 
@@ -64,7 +80,6 @@ export default class NPCGoomba extends NPC {
 					this.sxsyswshIndex = 1
 				}
 			}
-			this.lookForActions(scene)
 		}
 	
 		else if (this.state == this.states.STOMPED) {
@@ -72,11 +87,10 @@ export default class NPCGoomba extends NPC {
 				this.inittime = time
 				this.init = true
 			}
-			if (time - this.inittime >= this.animationParameters.DELAY) {
-				scene.unbindComponent(this.componentIdentifier)
-				return true
-			}
+			if (time - this.inittime >= this.animationParameters.DELAY) this._shouldBeRemoved = true
 		}
+
+		else if (this.state == this.states.HIT) this.animationHit(time, scene)
 	}
 
 }
