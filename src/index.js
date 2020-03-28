@@ -27,4 +27,4 @@ const [ACASTLE, BCASTLE, ES, C, BLOCKS, CHARACTERS, PSTF, GF, L11, L11B1, L12, L
 const scene = new CanvasScene(CanvasComponent, CANVASSCENEW, CANVASSCENEH, {ACASTLE, BCASTLE, ES, C, BLOCKS, CHARACTERS, PSTF, GF, L11, L11B1, L12, L12B1, L12B2, TRANSITION})
 
 // Music loading algorithm: Load in I0-stage then display I4 when complete
-scene.init(scene => /*Display.I1(scene)*/ { Display.L11(scene); scene.move(-4900) })
+scene.init(scene => /*Display.I1(scene)*/ { Display.L11(scene); /*scene.move(-4900)*/ })
