@@ -202,11 +202,11 @@ var randomize = function randomize(min, max) {
 	return Math.round(min - 0.5 + Math.random() * (max - min + 1));
 };
 
-var SPRITESPATH = '../textures/sprites';
+var SPRITESPATH = './textures/sprites';
 
-var LEVELBGPATH = '../textures/levels';
+var LEVELBGPATH = './textures/levels';
 
-var OTHERPATH = '../textures/other';
+var OTHERPATH = './textures/other';
 
 var CANVASSCENEW = 720,
     CANVASSCENEH = 480;
@@ -412,18 +412,18 @@ var SFX = function SFX() {
 	_classCallCheck(this, SFX);
 };
 
-SFX.bump = createHInstance(['../audio/sfx/Bump.wav']);
-SFX.coin = createHInstance(['../audio/sfx/Coin.wav']);
-SFX.squish = createHInstance(['../audio/sfx/Squish.wav']);
-SFX.jump = createHInstance(['../audio/sfx/Jump.wav']);
-SFX.warning = createHInstance(['../audio/sfx/Warning.wav']);
-SFX.die = createHInstance(['../audio/sfx/Die.mp3']);
-SFX.warp = createHInstance(['../audio/sfx/Warp.wav']);
-SFX.gameover = createHInstance(['../audio/sfx/GameOver.mp3']);
-SFX.flagpole = createHInstance(['../audio/sfx/Flagpole.mp3']);
-SFX.firework = createHInstance(['../audio/sfx/Firework.wav']);
-SFX.areaclear = createHInstance(['../audio/sfx/AreaClear.mp3']);
-SFX.remainingTimeToPoints = createHInstance(['../audio/sfx/RemainingTimeToPoints.mp3'], { loop: true, volume: 0.19 });
+SFX.bump = createHInstance(['./audio/sfx/Bump.wav']);
+SFX.coin = createHInstance(['./audio/sfx/Coin.wav']);
+SFX.squish = createHInstance(['./audio/sfx/Squish.wav']);
+SFX.jump = createHInstance(['./audio/sfx/Jump.wav']);
+SFX.warning = createHInstance(['./audio/sfx/Warning.wav']);
+SFX.die = createHInstance(['./audio/sfx/Die.mp3']);
+SFX.warp = createHInstance(['./audio/sfx/Warp.wav']);
+SFX.gameover = createHInstance(['./audio/sfx/GameOver.mp3']);
+SFX.flagpole = createHInstance(['./audio/sfx/Flagpole.mp3']);
+SFX.firework = createHInstance(['./audio/sfx/Firework.wav']);
+SFX.areaclear = createHInstance(['./audio/sfx/AreaClear.mp3']);
+SFX.remainingTimeToPoints = createHInstance(['./audio/sfx/RemainingTimeToPoints.mp3'], { loop: true, volume: 0.19 });
 
 var Music = function () {
 	function Music() {
@@ -554,11 +554,11 @@ var Music = function () {
 	return Music;
 }();
 
-Music.overworld = createHInstance(['../audio/music/Overworld.mp3'], { loop: true });
-Music.overworldAccelerated = createHInstance(['../audio/music/OverworldAccelerated.mp3'], { loop: true });
+Music.overworld = createHInstance(['./audio/music/Overworld.mp3'], { loop: true });
+Music.overworldAccelerated = createHInstance(['./audio/music/OverworldAccelerated.mp3'], { loop: true });
 
-Music.underground = createHInstance(['../audio/music/Underground.mp3'], { loop: true });
-Music.undergroundAccelerated = createHInstance(['../audio/music/UndergroundAccelerated.mp3'], { loop: true });
+Music.underground = createHInstance(['./audio/music/Underground.mp3'], { loop: true });
+Music.undergroundAccelerated = createHInstance(['./audio/music/UndergroundAccelerated.mp3'], { loop: true });
 
 exports.SFX = SFX;
 exports.Music = Music;

@@ -7,18 +7,18 @@ const createHInstance = (src, parameters = {}) => new H(assign({src, volume: 0.1
 
 class SFX {}
 
-SFX.bump = createHInstance(['../audio/sfx/Bump.wav'])
-SFX.coin = createHInstance(['../audio/sfx/Coin.wav'])
-SFX.squish = createHInstance(['../audio/sfx/Squish.wav'])
-SFX.jump = createHInstance(['../audio/sfx/Jump.wav'])
-SFX.warning = createHInstance(['../audio/sfx/Warning.wav'])
-SFX.die = createHInstance(['../audio/sfx/Die.mp3'])
-SFX.warp = createHInstance(['../audio/sfx/Warp.wav'])
-SFX.gameover = createHInstance(['../audio/sfx/GameOver.mp3'])
-SFX.flagpole = createHInstance(['../audio/sfx/Flagpole.mp3'])
-SFX.firework = createHInstance(['../audio/sfx/Firework.wav'])
-SFX.areaclear = createHInstance(['../audio/sfx/AreaClear.mp3'])
-SFX.remainingTimeToPoints = createHInstance(['../audio/sfx/RemainingTimeToPoints.mp3'], {loop: true, volume: 0.19})
+SFX.bump = createHInstance(['./audio/sfx/Bump.wav'])
+SFX.coin = createHInstance(['./audio/sfx/Coin.wav'])
+SFX.squish = createHInstance(['./audio/sfx/Squish.wav'])
+SFX.jump = createHInstance(['./audio/sfx/Jump.wav'])
+SFX.warning = createHInstance(['./audio/sfx/Warning.wav'])
+SFX.die = createHInstance(['./audio/sfx/Die.mp3'])
+SFX.warp = createHInstance(['./audio/sfx/Warp.wav'])
+SFX.gameover = createHInstance(['./audio/sfx/GameOver.mp3'])
+SFX.flagpole = createHInstance(['./audio/sfx/Flagpole.mp3'])
+SFX.firework = createHInstance(['./audio/sfx/Firework.wav'])
+SFX.areaclear = createHInstance(['./audio/sfx/AreaClear.mp3'])
+SFX.remainingTimeToPoints = createHInstance(['./audio/sfx/RemainingTimeToPoints.mp3'], {loop: true, volume: 0.19})
 
 class Music {
 	static init(complete) {
@@ -76,11 +76,11 @@ class Music {
 	}
 }
 
-Music.overworld = createHInstance(['../audio/music/Overworld.mp3'], {loop: true})
-Music.overworldAccelerated = createHInstance(['../audio/music/OverworldAccelerated.mp3'], {loop: true})
+Music.overworld = createHInstance(['./audio/music/Overworld.mp3'], {loop: true})
+Music.overworldAccelerated = createHInstance(['./audio/music/OverworldAccelerated.mp3'], {loop: true})
 
-Music.underground = createHInstance(['../audio/music/Underground.mp3'], {loop: true})
-Music.undergroundAccelerated = createHInstance(['../audio/music/UndergroundAccelerated.mp3'], {loop: true})
+Music.underground = createHInstance(['./audio/music/Underground.mp3'], {loop: true})
+Music.undergroundAccelerated = createHInstance(['./audio/music/UndergroundAccelerated.mp3'], {loop: true})
 
 
 export {SFX, Music}

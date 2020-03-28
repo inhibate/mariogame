@@ -30,11 +30,11 @@ const precision = (number, precision) => Math.round(number * (10 ** precision)) 
 
 const randomize = (min, max) => Math.round(min - 0.5 + Math.random() * (max - min + 1))
 
-const SPRITESPATH = '../textures/sprites'
+const SPRITESPATH = './textures/sprites'
 
-const LEVELBGPATH = '../textures/levels'
+const LEVELBGPATH = './textures/levels'
 
-const OTHERPATH = '../textures/other'
+const OTHERPATH = './textures/other'
 
 const [CANVASSCENEW, CANVASSCENEH] = [720, 480]
 
