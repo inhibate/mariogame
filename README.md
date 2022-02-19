@@ -1,2 +1,2 @@
-https://hypotenuse.github.io/ES6SMB1/
+https://gentype.github.io/ES6SMB1/
 
