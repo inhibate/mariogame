@@ -1,4 +1,5 @@
-<img src="https://github.com/prg938/mariogame/assets/7237762/7068794d-d452-421a-b62e-abf54e3012c7" width="120" />
+
+![SuperMarioBrosGIF-1](https://github.com/prg938/mariogame/assets/7237762/349a244c-4e1b-4a01-974f-b094e07849a3)
 
 **PLAY**: https://prg938.github.io/mariogame
 
